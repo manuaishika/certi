@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Verify {{ cert_id }} | CerGeMA{% endblock %}
+{% block content %}
+<div class="max-w-lg mx-auto text-center">
+  {% if not cert %}
+    <div class="rounded-2xl bg-red-50 border border-red-200 p-8"><div class="text-5xl">✗</div>
+      <h1 class="text-xl font-bold text-red-800 mt-2">Not found</h1>
+      <p class="text-sm text-red-700 mt-1">No certificate with ID <span class="font-mono">{{ cert_id }}</span> exists. It may be forged or mistyped.</p></div>
+  {% elif cert.revoked %}
+    <div class="rounded-2xl bg-amber-50 border border-amber-300 p-8"><div class="text-5xl">⚠</div>
+      <h1 class="text-xl font-bold text-amber-800 mt-2">Revoked</h1>
+      <p class="text-sm text-amber-800 mt-1">This certificate was issued but has since been revoked by the organiser.</p></div>
+  {% else %}
+    <div class="rounded-2xl bg-emerald-50 border border-emerald-200 p-8"><div class="text-5xl text-emerald-600">✓</div>
+      <h1 class="text-xl font-bold text-emerald-800 mt-2">Authentic certificate</h1>
+      <dl class="mt-5 text-left text-sm grid grid-cols-3 gap-y-2">
+        <dt class="text-slate-500">Awarded to</dt><dd class="col-span-2 font-semibold">{{ reg.name_en }}{% if reg.name_hi %} ({{ reg.name_hi }}){% endif %}</dd>
+        <dt class="text-slate-500">Event</dt><dd class="col-span-2">{{ ev.title }}</dd>
+        <dt class="text-slate-500">Issued by</dt><dd class="col-span-2">{{ root.name }}{% if branch.id != root.id %} — {{ branch.name }}{% endif %}</dd>
+        <dt class="text-slate-500">Issued on</dt><dd class="col-span-2">{{ cert.issued_at.strftime('%d %B %Y') }}</dd>
+        <dt class="text-slate-500">Certificate ID</dt><dd class="col-span-2 font-mono">{{ cert.cert_id }}</dd>
+      </dl>
+      {% if sig_ok is sameas false %}<p class="mt-4 text-xs text-amber-700">Note: the link signature did not match, but the certificate exists in our records.</p>{% endif %}
+    </div>
+  {% endif %}
+  <form action="/claim" method="post" class="mt-6"><a class="text-sm underline" href="/claim">Look up another</a></form>
+</div>
+{% endblock %}

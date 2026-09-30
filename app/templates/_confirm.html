@@ -1,0 +1,22 @@
+<div class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50" onclick="if(event.target===this)this.remove()">
+  <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl">
+    <h2 class="text-lg font-bold">{{ t('confirm') }}</h2>
+    {% if errors %}
+      <ul class="mt-3 text-sm text-red-700 list-disc pl-5">{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul>
+      <button class="mt-5 w-full rounded-lg border py-2" onclick="this.closest('.fixed').remove()">{{ t('edit') }}</button>
+    {% else %}
+      <p class="text-sm text-slate-500 mt-1">{{ t('confirm_hint') }}</p>
+      <dl class="mt-4 text-sm divide-y">
+        <div class="py-2"><dt class="text-slate-500 text-xs">{{ t('name_en') }}</dt><dd class="text-lg font-semibold">{{ form.name_en }}</dd></div>
+        {% if form.name_hi %}<div class="py-2"><dt class="text-slate-500 text-xs">{{ t('name_hi') }}</dt><dd class="text-lg font-semibold">{{ form.name_hi }}</dd></div>{% endif %}
+        <div class="py-2"><dt class="text-slate-500 text-xs">{{ t('institution') }} / {{ t('grade') }}</dt><dd>{{ form.institution or '—' }} / {{ form.grade or '—' }}</dd></div>
+        <div class="py-2"><dt class="text-slate-500 text-xs">{{ t('mobile') }}</dt><dd>{{ form.mobile }}</dd></div>
+      </dl>
+      <form method="post" action="/events/{{ ev.slug }}/register" class="mt-5 flex gap-2">
+        {% for k, v in form.items() %}<input type="hidden" name="{{ k }}" value="{{ v }}">{% endfor %}
+        <button type="button" class="flex-1 rounded-lg border py-2" onclick="this.closest('.fixed').remove()">{{ t('edit') }}</button>
+        <button class="flex-1 rounded-lg bg-brand text-white font-semibold py-2">{{ t('submit') }}</button>
+      </form>
+    {% endif %}
+  </div>
+</div>

@@ -1,0 +1,29 @@
+{% extends "base.html" %}{% set admin_nav = true %}
+{% block title %}New event | CerGeMA{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold">Create event</h1>
+<form method="post" action="/admin/events" class="mt-4 bg-white border rounded-xl p-5 grid md:grid-cols-2 gap-4 text-sm">
+  <label>Title*<input name="title" required class="mt-1 w-full border rounded px-3 py-2"></label>
+  <label>Title (हिंदी)<input name="title_hi" class="mt-1 w-full border rounded px-3 py-2"></label>
+  <label>Hosting organisation / branch*<select name="org_id" class="mt-1 w-full border rounded px-3 py-2">{% for o in orgs %}<option value="{{ o.id }}">{{ o.name }}{{ ' (branch)' if o.parent_id }}</option>{% endfor %}</select></label>
+  <label>Mode<select name="mode" class="mt-1 w-full border rounded px-3 py-2"><option value="offline">Offline (in person)</option><option value="online">Online</option><option value="hybrid">Hybrid</option></select>
+    <span class="text-xs text-slate-500">Online / hybrid need the Event Lifecycle module (Pro+).</span></label>
+  <label class="md:col-span-2">Description<textarea name="description" rows="3" class="mt-1 w-full border rounded px-3 py-2"></textarea></label>
+  <label>Starts at<input type="datetime-local" name="starts_at" class="mt-1 w-full border rounded px-3 py-2"></label>
+  <label>Venue<input name="venue" class="mt-1 w-full border rounded px-3 py-2"></label>
+  <label>Latitude<input name="lat" class="mt-1 w-full border rounded px-3 py-2"></label><label>Longitude<input name="lng" class="mt-1 w-full border rounded px-3 py-2"></label>
+  <label class="md:col-span-2">Arrival instructions<input name="arrival_info" class="mt-1 w-full border rounded px-3 py-2"></label>
+  <label class="md:col-span-2">Online meeting link (Zoom / Meet / YouTube) — shown only to registered online attendees<input name="meeting_url" type="url" class="mt-1 w-full border rounded px-3 py-2"></label>
+  <label>Certificate title<input name="cert_title" value="Certificate of Participation" class="mt-1 w-full border rounded px-3 py-2"></label>
+  <label>Orientation<select name="orientation" class="mt-1 w-full border rounded px-3 py-2"><option value="landscape">Landscape A4</option><option value="portrait">Portrait A4</option></select></label>
+  <label class="md:col-span-2">Certificate body <span class="text-slate-400">({event} {date} {name} {grade})</span><input name="cert_body" value="for actively participating in {event} held on {date}." class="mt-1 w-full border rounded px-3 py-2"></label>
+  <label>Signatory name<input name="signatory" class="mt-1 w-full border rounded px-3 py-2"></label><label>Signatory role<input name="signatory_role" class="mt-1 w-full border rounded px-3 py-2"></label>
+  <div class="md:col-span-2 flex flex-wrap gap-5">
+    <label><input type="checkbox" name="reg_open" checked> Registration open</label>
+    <label><input type="checkbox" name="approval_required" checked> Require approval before certificate</label>
+    <label><input type="checkbox" name="feedback_gate" checked> Feedback gate before download</label>
+    <label><input type="checkbox" name="gate_attendance"> Only "Present" attendees get certificates (Attendance module)</label>
+  </div>
+  <button class="md:col-span-2 rounded-lg bg-brand text-white py-3 font-semibold">Create event</button>
+</form>
+{% endblock %}

@@ -1,0 +1,26 @@
+{% extends "base.html" %}{% set admin_nav = true %}
+{% block title %}Dashboard | CerGeMA{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold">{{ 'Platform overview' if user.role=='super' else root.name }}</h1>
+<div class="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+  {% for k, v in stats.items() %}<div class="bg-white border rounded-xl p-4"><div class="text-xs uppercase text-slate-500">{{ k }}</div><div class="text-3xl font-bold">{{ v }}</div></div>{% endfor %}
+  {% if revenue is not none %}<div class="bg-white border rounded-xl p-4"><div class="text-xs uppercase text-slate-500">Revenue (INR, paid)</div><div class="text-3xl font-bold">{{ revenue|inr }}</div></div>{% endif %}
+</div>
+{% if root %}
+<div class="mt-6 grid md:grid-cols-2 gap-4">
+  <div class="bg-white border rounded-xl p-4">
+    <div class="flex justify-between text-sm"><span class="font-semibold">{{ plans.plan_of(root).name }}</span><a class="text-blue-700 underline" href="/admin/billing">Upgrade</a></div>
+    {% if usage.quota %}<div class="mt-3 text-xs text-slate-500">Certificates used: {{ usage.used }} / {{ usage.quota }}</div>
+    <div class="h-2 bg-slate-100 rounded mt-1"><div class="h-2 rounded {{ 'bg-red-500' if usage.pct>=90 else 'bg-brand' }}" style="width:{{ usage.pct }}%"></div></div>
+    {% else %}<div class="mt-3 text-xs text-slate-500">Unlimited certificates ({{ usage.used }} issued)</div>{% endif %}
+  </div>
+  <div class="bg-white border rounded-xl p-4"><div class="text-sm font-semibold">Wallet</div><div class="text-3xl font-bold">{{ root.wallet|inr }}</div>
+    <div class="text-xs text-slate-500">credits for AI backgrounds &amp; overage</div></div>
+</div>
+{% endif %}
+{% if tenants %}
+<h2 class="mt-8 mb-2 font-semibold">Tenants</h2>
+<div class="bg-white border rounded-xl divide-y text-sm">{% for t_ in tenants %}<div class="p-3 flex justify-between"><span>{{ t_.name }}</span><span class="text-slate-500">{{ plans.PLANS[t_.plan].name }} · wallet {{ t_.wallet|inr }}</span></div>{% endfor %}</div>
+{% endif %}
+<div class="mt-6 flex gap-2"><a class="rounded-lg bg-brand text-white px-4 py-2" href="/admin/events/new">+ New event</a><a class="rounded-lg border bg-white px-4 py-2" href="/admin/scan">Open scanner</a></div>
+{% endblock %}

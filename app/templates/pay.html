@@ -1,0 +1,21 @@
+{% extends "base.html" %}{% set admin_nav = true %}
+{% block title %}Pay | CerGeMA{% endblock %}
+{% block content %}
+<div class="max-w-md mx-auto bg-white border rounded-2xl p-6 text-center">
+  <h1 class="text-xl font-bold">Complete payment</h1>
+  <div class="text-3xl font-bold mt-3">{{ txn.amount }} {{ txn.currency }}</div>
+  <div class="text-sm text-slate-500">{{ txn.kind }} {{ txn.plan }} {% if txn.coupon %}· coupon {{ txn.coupon }}{% endif %}</div>
+  {% if txn.provider == 'razorpay' %}
+    <form id="rzp" method="post" action="/pay/{{ txn.id }}/razorpay"><input type="hidden" name="razorpay_payment_id"><input type="hidden" name="razorpay_order_id"><input type="hidden" name="razorpay_signature"></form>
+    <button id="go" class="mt-5 w-full rounded-lg bg-brand text-white py-3 font-semibold">Pay with UPI / Card / NetBanking</button>
+  {% elif txn.provider == 'mock' %}
+    <div class="mt-4 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-sm p-3">Test mode: no payment gateway configured. This button simulates a successful payment.</div>
+    <form method="post" action="/pay/{{ txn.id }}/mock"><button class="mt-4 w-full rounded-lg bg-brand text-white py-3 font-semibold">Simulate successful payment</button></form>
+  {% endif %}
+</div>
+{% endblock %}
+{% block scripts %}{% if txn.provider == 'razorpay' %}
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>document.getElementById('go').onclick=()=>{
+  new Razorpay({key:"{{ key }}",amount:{{ minor }},currency:"INR",order_id:"{{ txn.provider_ref }}",name:"CerGeMA",description:"{{ txn.kind }} {{ txn.plan }}",
+    handler:r=>{const f=document.getElementById('rzp');for(const k in r)if(f[k])f[k].value=r[k];f.submit();}}).open();};</script>{% endif %}{% endblock %}

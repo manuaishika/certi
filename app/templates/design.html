@@ -1,0 +1,63 @@
+{% extends "base.html" %}{% set admin_nav = true %}
+{% block title %}Designer — {{ ev.title }}{% endblock %}
+{% block content %}
+<div class="flex items-center gap-3"><a href="/admin/events/{{ ev.id }}" class="text-sm underline">← {{ ev.title }}</a><h1 class="text-xl font-bold">Certificate designer</h1></div>
+<div class="mt-4 grid lg:grid-cols-3 gap-6">
+  <div class="lg:col-span-2">
+    <div class="text-xs text-slate-500 mb-1">Drag the blue handles to position fields. Sample data shown; real names render at 300 DPI.</div>
+    <div id="stage" class="relative bg-white border shadow select-none" style="{{ 'aspect-ratio: 297/210' if ev.orientation=='landscape' else 'aspect-ratio: 210/297; max-width: 520px' }}">
+      <img id="preview" src="/admin/events/{{ ev.id }}/preview.png?dpi=90&v={{ v }}" class="absolute inset-0 w-full h-full" alt="preview" draggable="false">
+      {% for f in fields %}
+      <div class="handle absolute -translate-x-1/2 -translate-y-1/2 cursor-move text-[10px] leading-none px-1.5 py-1 rounded bg-blue-600/50 hover:bg-blue-600 text-white whitespace-nowrap touch-none"
+           data-f="{{ f }}" style="left:{{ layout[f].x*100 }}%;top:{{ layout[f].y*100 }}%">{{ labels[f] }}</div>{% endfor %}
+    </div>
+    <div class="mt-2 flex flex-wrap gap-2 text-sm items-center">
+      <span id="sel" class="text-slate-500">Select a field, then:</span>
+      <button type="button" id="smaller" class="rounded border bg-white px-3">A−</button><button type="button" id="bigger" class="rounded border bg-white px-3">A+</button>
+      <label class="ml-2 text-xs"><input type="checkbox" id="showh" checked> Show handles</label><span id="saved" class="text-xs text-emerald-700"></span>
+      <form method="post" action="/admin/events/{{ ev.id }}/layout/reset" class="ml-auto"><button class="rounded border bg-white px-3 py-1">Reset positions</button></form>
+    </div>
+  </div>
+  <div class="space-y-4 text-sm">
+    <form method="post" action="/admin/events/{{ ev.id }}/style" class="bg-white border rounded-xl p-4 space-y-3">
+      <h2 class="font-semibold">Template &amp; colour</h2>
+      <select name="template" class="w-full border rounded px-2 py-2">{% for k, l in templates.items() %}<option value="{{ k }}" {{ 'selected' if ev.template==k }}>{{ l }}</option>{% endfor %}{% if ev.template=='custom' %}<option value="custom" selected disabled>Custom background (active)</option>{% endif %}</select>
+      <label class="flex items-center gap-2">Accent <input type="color" name="accent" value="{{ ev.accent }}"></label>
+      <select name="orientation" class="w-full border rounded px-2 py-2"><option value="landscape" {{ 'selected' if ev.orientation=='landscape' }}>Landscape (297×210 mm)</option><option value="portrait" {{ 'selected' if ev.orientation=='portrait' }}>Portrait (210×297 mm)</option></select>
+      <button class="w-full rounded bg-brand text-white py-2">Apply</button>
+    </form>
+    <form method="post" action="/admin/events/{{ ev.id }}/background" enctype="multipart/form-data" class="bg-white border rounded-xl p-4 space-y-2">
+      <h2 class="font-semibold">Upload your own background</h2>
+      <input type="file" name="file" accept="image/*" required class="text-xs"><button class="w-full rounded border py-2">Upload &amp; use</button></form>
+    <form method="post" action="/admin/events/{{ ev.id }}/ai-background" class="bg-white border rounded-xl p-4 space-y-2">
+      <h2 class="font-semibold">✨ AI background</h2>
+      <textarea name="prompt" rows="2" maxlength="300" required class="w-full border rounded p-2" placeholder="e.g. green eco leaves border with gold trim" {{ 'disabled' if ai_policy=='blocked' }}></textarea>
+      <div class="text-xs text-slate-500">{{ ai_detail }}</div>
+      <button class="w-full rounded bg-brand-gold text-brand font-semibold py-2 {{ 'opacity-50' if ai_policy=='blocked' }}" {{ 'disabled' if ai_policy=='blocked' }}>Generate</button></form>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+const EVENT={{ ev.id }}, stage=document.getElementById('stage'), preview=document.getElementById('preview');
+const layout={{ layout|tojson }}; let selected=null, timer=null;
+function save(){ clearTimeout(timer); timer=setTimeout(async()=>{
+  const r=await fetch(`/admin/events/${EVENT}/layout`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(layout)});
+  if(r.ok){document.getElementById('saved').textContent='Saved ✓'; preview.src=`/admin/events/${EVENT}/preview.png?dpi=90&v=${Date.now()}`; setTimeout(()=>document.getElementById('saved').textContent='',1500);} },350); }
+document.querySelectorAll('.handle').forEach(h=>{
+  h.addEventListener('pointerdown',e=>{
+    e.preventDefault(); selected=h.dataset.f; document.getElementById('sel').textContent='Selected: '+h.textContent;
+    document.querySelectorAll('.handle').forEach(x=>x.style.outline=''); h.style.outline='2px solid #d4af37';
+    h.setPointerCapture(e.pointerId);
+    const move=ev=>{const b=stage.getBoundingClientRect();
+      const x=Math.min(1,Math.max(0,(ev.clientX-b.left)/b.width)), y=Math.min(1,Math.max(0,(ev.clientY-b.top)/b.height));
+      layout[selected].x=x; layout[selected].y=y; h.style.left=x*100+'%'; h.style.top=y*100+'%';};
+    const up=()=>{h.removeEventListener('pointermove',move);h.removeEventListener('pointerup',up);save();};
+    h.addEventListener('pointermove',move); h.addEventListener('pointerup',up);
+  });
+});
+function resize(f){ if(!selected)return; layout[selected].size=Math.max(0.008,layout[selected].size*f); save(); }
+document.getElementById('showh').onchange=e=>document.querySelectorAll('.handle').forEach(h=>h.style.display=e.target.checked?'':'none');
+document.getElementById('bigger').onclick=()=>resize(1.08); document.getElementById('smaller').onclick=()=>resize(1/1.08);
+</script>
+{% endblock %}

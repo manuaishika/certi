@@ -1,0 +1,96 @@
+{% extends "base.html" %}{% set admin_nav = true %}
+{% block title %}{{ ev.title }} | CerGeMA{% endblock %}
+{% block content %}
+<div class="flex flex-wrap items-center gap-2">
+  <div><h1 class="text-2xl font-bold">{{ ev.title }}</h1>
+    <div class="text-xs text-slate-500">{{ root.name }}{% if branch.id != root.id %} · {{ branch.name }}{% endif %} · public page <a class="underline" target="_blank" href="/events/{{ ev.slug }}">/events/{{ ev.slug }}</a></div></div>
+  <div class="ml-auto flex gap-2 text-sm">
+    <a class="rounded-lg border bg-white px-3 py-2" href="/admin/events/{{ ev.id }}/design">🎨 Certificate designer</a>
+    <a class="rounded-lg border bg-white px-3 py-2" href="/admin/events/{{ ev.id }}/export.csv">Export CSV</a></div>
+</div>
+
+<div class="mt-4 grid grid-cols-2 md:grid-cols-5 gap-3 text-sm">
+  <div class="bg-white border rounded-xl p-3"><div class="text-xs text-slate-500">Registered</div><div class="text-2xl font-bold">{{ stats.total }}</div></div>
+  <div class="bg-white border rounded-xl p-3"><div class="text-xs text-slate-500">Approved</div><div class="text-2xl font-bold">{{ stats.approved }}</div></div>
+  <div class="bg-white border rounded-xl p-3"><div class="text-xs text-slate-500">Present</div><div class="text-2xl font-bold">{{ stats.present }}</div></div>
+  <div class="bg-white border rounded-xl p-3"><div class="text-xs text-slate-500">Certificates</div><div class="text-2xl font-bold">{{ certs|length }}</div></div>
+  <div class="bg-white border rounded-xl p-3"><div class="text-xs text-slate-500">Avg feedback</div><div class="text-2xl font-bold">{{ avg if avg else '—' }}{% if avg %}<span class="text-sm">★</span>{% endif %}</div></div>
+</div>
+
+<section class="mt-6 bg-white border rounded-xl p-4">
+  <div class="flex flex-wrap gap-2 items-center">
+    <h2 class="font-semibold mr-2">Participants</h2>
+    <input type="search" name="q" value="{{ q }}" placeholder="Search name / mobile / institution" class="border rounded-lg px-3 py-1 text-sm"
+           hx-get="/admin/events/{{ ev.id }}/regs" hx-trigger="keyup changed delay:300ms, search" hx-target="#regbody">
+    <form method="post" action="/admin/events/{{ ev.id }}/approve-all" class="ml-auto"><button class="text-sm rounded border px-3 py-1">Approve all</button></form>
+    <form method="post" action="/admin/events/{{ ev.id }}/issue" class="flex items-center gap-2 text-sm">
+      <label class="text-xs"><input type="checkbox" name="notify_people"> WhatsApp/SMS them</label>
+      <button class="rounded bg-brand text-white px-4 py-1">Issue certificates</button></form>
+  </div>
+  <p class="text-xs text-slate-500 mt-1">Edit any cell inline — changes save instantly and flow into already-issued certificates.
+    {% if ev.gate_attendance %}<b>Attendance gate ON:</b> only "Present" attendees are certified.{% endif %}
+    {% if remaining is not none %}Quota remaining: <b>{{ remaining }}</b>.{% endif %}</p>
+  <div class="overflow-x-auto mt-2">
+    <table class="w-full text-sm"><thead class="text-left text-xs text-slate-500"><tr><th class="p-1">Name (EN)</th><th class="p-1">नाम (हिंदी)</th><th class="p-1">Institution</th><th class="p-1">Grade</th><th class="p-1">Mobile</th><th class="p-1">Approval</th><th class="p-1">Attendance</th><th class="p-1">Certificate</th><th class="p-1">Pass</th></tr></thead>
+      <tbody id="regbody">{% for r in regs %}{% set cert = certs.get(r.id) %}{% include "_reg_row.html" %}{% endfor %}</tbody></table>
+  </div>
+  <div class="mt-4 grid md:grid-cols-2 gap-4 text-sm">
+    <form method="post" action="/admin/events/{{ ev.id }}/import" enctype="multipart/form-data" class="border rounded-lg p-3">
+      <div class="font-semibold">Bulk upload (CSV / Excel)</div>
+      <div class="text-xs text-slate-500">Columns: name, name_hi, institution, grade, mobile, email</div>
+      <input type="file" name="file" accept=".csv,.xlsx" required class="mt-2 text-xs"><button class="ml-2 rounded border px-3 py-1">Import</button></form>
+    <form method="post" action="/admin/events/{{ ev.id }}/regs/add" class="border rounded-lg p-3 grid grid-cols-3 gap-2">
+      <div class="col-span-3 font-semibold">Add participant</div>
+      <input name="name_en" placeholder="Name" required class="border rounded px-2 py-1"><input name="name_hi" placeholder="नाम" class="border rounded px-2 py-1"><input name="mobile" placeholder="Mobile" required class="border rounded px-2 py-1">
+      <input name="institution" placeholder="Institution" class="border rounded px-2 py-1"><input name="grade" placeholder="Grade" class="border rounded px-2 py-1"><button class="rounded border">Add</button></form>
+  </div>
+</section>
+
+<section class="mt-6 grid md:grid-cols-2 gap-4">
+  <div class="bg-white border rounded-xl p-4 text-sm">
+    <h2 class="font-semibold">Co-hosts &amp; sponsors</h2>
+    {% if not cobrand %}<p class="text-slate-500 mt-1">Available on Institutional Pro and above.</p>{% else %}
+    <p class="text-xs text-slate-500">Up to {{ cfg.MAX_COHOSTS }} co-host(s) and {{ cfg.MAX_SPONSORS }} sponsor(s).</p>
+    {% for kind, items in [('cohost', ev.cohosts), ('sponsor', ev.sponsors)] %}
+      {% for it in items %}<div class="flex items-center gap-2 mt-2">{% if it.logo %}<img src="/uploads/{{ it.logo }}" class="h-8" alt="">{% endif %}<span>{{ kind|title }}: {{ it.name }}</span>
+        <form method="post" action="/admin/events/{{ ev.id }}/brand/{{ kind }}/{{ loop.index0 }}/delete" class="ml-auto"><button class="text-xs text-red-600">remove</button></form></div>{% endfor %}
+    {% endfor %}
+    <form method="post" action="/admin/events/{{ ev.id }}/brand" enctype="multipart/form-data" class="mt-3 grid grid-cols-3 gap-2">
+      <select name="kind" class="border rounded px-2"><option value="cohost">Co-host</option><option value="sponsor">Sponsor</option></select>
+      <input name="name" placeholder="Name" required class="border rounded px-2 py-1"><input type="file" name="logo" accept="image/*" class="text-xs col-span-2"><button class="rounded border">Add</button></form>
+    {% endif %}
+  </div>
+  <div class="bg-white border rounded-xl p-4 text-sm">
+    <h2 class="font-semibold">Recent feedback ({{ fb_count }})</h2>
+    {% for f in feedback %}<div class="mt-2 border-t pt-2"><span class="text-amber-500">{{ '★' * f.rating }}</span> {{ f.comment }}</div>{% else %}<p class="text-slate-400 mt-1">None yet.</p>{% endfor %}
+  </div>
+</section>
+
+<details class="mt-6 bg-white border rounded-xl p-4" >
+  <summary class="cursor-pointer font-semibold">Event settings</summary>
+  <form method="post" action="/admin/events/{{ ev.id }}/settings" class="mt-3 grid md:grid-cols-2 gap-3 text-sm">
+    <label>Title<input name="title" value="{{ ev.title }}" required class="mt-1 w-full border rounded px-3 py-2"></label>
+    <label>Title (हिंदी)<input name="title_hi" value="{{ ev.title_hi }}" class="mt-1 w-full border rounded px-3 py-2"></label>
+    <label class="md:col-span-2">Description<textarea name="description" rows="3" class="mt-1 w-full border rounded px-3 py-2">{{ ev.description }}</textarea></label>
+    <label>Mode<select name="mode" class="mt-1 w-full border rounded px-3 py-2" {{ 'disabled' if not lifecycle }}>{% for m in ['offline','online','hybrid'] %}<option value="{{ m }}" {{ 'selected' if ev.mode==m }}>{{ m|title }}</option>{% endfor %}</select>{% if not lifecycle %}<input type="hidden" name="mode" value="offline"><span class="text-xs text-slate-500">Needs Event Lifecycle module</span>{% endif %}</label>
+    <label>Starts at<input type="datetime-local" name="starts_at" value="{{ ev.starts_at.strftime('%Y-%m-%dT%H:%M') if ev.starts_at else '' }}" class="mt-1 w-full border rounded px-3 py-2"></label>
+    <label>Venue<input name="venue" value="{{ ev.venue }}" class="mt-1 w-full border rounded px-3 py-2"></label>
+    <label>Arrival instructions<input name="arrival_info" value="{{ ev.arrival_info }}" class="mt-1 w-full border rounded px-3 py-2"></label>
+    <label>Latitude<input name="lat" value="{{ ev.lat if ev.lat is not none else '' }}" class="mt-1 w-full border rounded px-3 py-2"></label>
+    <label>Longitude<input name="lng" value="{{ ev.lng if ev.lng is not none else '' }}" class="mt-1 w-full border rounded px-3 py-2"></label>
+    <label class="md:col-span-2">Meeting link<input name="meeting_url" value="{{ ev.meeting_url }}" class="mt-1 w-full border rounded px-3 py-2"></label>
+    <label>Certificate title<input name="cert_title" value="{{ ev.cert_title }}" class="mt-1 w-full border rounded px-3 py-2"></label>
+    <label>Orientation<select name="orientation" class="mt-1 w-full border rounded px-3 py-2"><option value="landscape" {{ 'selected' if ev.orientation=='landscape' }}>Landscape</option><option value="portrait" {{ 'selected' if ev.orientation=='portrait' }}>Portrait</option></select></label>
+    <label class="md:col-span-2">Certificate body<input name="cert_body" value="{{ ev.cert_body }}" class="mt-1 w-full border rounded px-3 py-2"></label>
+    <label>Signatory<input name="signatory" value="{{ ev.signatory }}" class="mt-1 w-full border rounded px-3 py-2"></label>
+    <label>Signatory role<input name="signatory_role" value="{{ ev.signatory_role }}" class="mt-1 w-full border rounded px-3 py-2"></label>
+    <label>Sponsor label<input name="sponsor_label" value="{{ ev.sponsor_label }}" class="mt-1 w-full border rounded px-3 py-2"></label>
+    <div class="md:col-span-2 flex flex-wrap gap-5">
+      <label><input type="checkbox" name="reg_open" {{ 'checked' if ev.reg_open }}> Registration open</label>
+      <label><input type="checkbox" name="approval_required" {{ 'checked' if ev.approval_required }}> Require approval</label>
+      <label><input type="checkbox" name="feedback_gate" {{ 'checked' if ev.feedback_gate }}> Feedback gate</label>
+      <label><input type="checkbox" name="gate_attendance" {{ 'checked' if ev.gate_attendance }} {{ 'disabled' if not attendance }}> Attendance gate{% if not attendance %} (needs Attendance module){% endif %}</label></div>
+    <button class="md:col-span-2 rounded-lg bg-brand text-white py-2">Save</button>
+  </form>
+</details>
+{% endblock %}

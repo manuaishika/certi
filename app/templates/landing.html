@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="rounded-2xl bg-gradient-to-br from-brand to-brand-600 text-white p-8 md:p-14 text-center">
+  <h1 class="text-3xl md:text-5xl font-bold">{{ t('tagline') }}</h1>
+  <p class="mt-4 text-blue-100 max-w-2xl mx-auto">Registration pages, digital ID passes, QR gate check-in, approvals, bilingual (English + हिंदी) certificates and instant online verification — one platform.</p>
+  <div class="mt-8 flex flex-wrap gap-3 justify-center">
+    <a href="/claim" class="rounded-lg bg-brand-gold text-brand font-semibold px-5 py-3">{{ t('claim') }}</a>
+    <a href="/login" class="rounded-lg border border-white/50 px-5 py-3">Organiser login</a>
+  </div>
+  <form action="/claim" method="post" class="mt-8 max-w-md mx-auto flex gap-2">
+    <input name="q" placeholder="{{ t('lookup_hint') }}" class="flex-1 rounded-lg px-3 py-3 text-slate-900" required>
+    <button class="rounded-lg bg-white text-brand font-semibold px-4">Go</button>
+  </form>
+</section>
+
+{% if events %}
+<h2 class="mt-10 mb-3 text-xl font-semibold">Open registrations</h2>
+<div class="grid md:grid-cols-3 gap-4">
+  {% for e in events %}
+  <a href="/events/{{ e.slug }}" class="block bg-white rounded-xl border p-4 hover:shadow">
+    <div class="font-semibold">{{ e.title }}</div>{% if e.title_hi %}<div class="text-sm text-slate-500">{{ e.title_hi }}</div>{% endif %}
+    <div class="mt-2 text-xs text-slate-500">{{ e.mode|title }}{% if e.starts_at %} · {{ e.starts_at.strftime('%d %b %Y') }}{% endif %}</div>
+  </a>{% endfor %}
+</div>
+{% endif %}
+
+<h2 class="mt-10 mb-3 text-xl font-semibold">Plans</h2>
+<div class="grid md:grid-cols-4 gap-4 text-sm">
+  {% for key, p in PLANS.items() %}
+  <div class="bg-white rounded-xl border p-4 {{ 'ring-2 ring-brand' if key=='pro' }}">
+    <div class="font-semibold">{{ p.name }}</div>
+    <div class="text-2xl font-bold mt-1">{{ p.price_inr|inr }}<span class="text-xs font-normal text-slate-500"> / {{ 'event' if p.period=='event' else p.period if p.price_inr else 'forever' }}</span></div>
+    <ul class="mt-3 space-y-1 text-slate-600">
+      <li>{{ '{:,}'.format(p.quota) + ' certificates' if p.quota else 'Unlimited certificates' }} / {{ p.period }}</li>
+      <li>{{ p.branches if p.branches else 'Unlimited' }} branch(es)</li>
+      <li>{{ 'Powered by CerGeMA watermark' if p.watermark else 'No watermark' }}</li>
+      <li>{{ p.modules|map('replace','_',' ')|join(', ') }}</li>
+    </ul>
+  </div>{% endfor %}
+</div>
+<p class="text-xs text-slate-500 mt-2">Overage ₹{{ plans.OVERAGE }} / certificate · AI backgrounds {{ cfg.AI_CREDITS_PER_RUN }} credits (1 credit = ₹1).</p>
+{% endblock %}

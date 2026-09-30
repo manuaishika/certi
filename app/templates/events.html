@@ -1,0 +1,12 @@
+{% extends "base.html" %}{% set admin_nav = true %}
+{% block title %}Events | CerGeMA{% endblock %}
+{% block content %}
+<div class="flex items-center"><h1 class="text-2xl font-bold">Events</h1><a href="/admin/events/new" class="ml-auto rounded-lg bg-brand text-white px-4 py-2">+ New event</a></div>
+<div class="mt-4 bg-white border rounded-xl divide-y">
+  {% for r in rows %}
+  <a href="/admin/events/{{ r.ev.id }}" class="flex items-center p-4 hover:bg-slate-50">
+    <div><div class="font-semibold">{{ r.ev.title }}</div><div class="text-xs text-slate-500">/events/{{ r.ev.slug }} · {{ r.ev.mode }}</div></div>
+    <div class="ml-auto text-sm text-slate-600">{{ r.regs }} registered · {{ r.certs }} certificates</div></a>
+  {% else %}<div class="p-6 text-slate-500">No events yet.</div>{% endfor %}
+</div>
+{% endblock %}

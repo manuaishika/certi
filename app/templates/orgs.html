@@ -1,0 +1,54 @@
+{% extends "base.html" %}{% set admin_nav = true %}
+{% block title %}Organisations | CerGeMA{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold">Organisations &amp; branches</h1>
+{% if user.role == 'super' %}
+<form method="post" action="/admin/orgs" class="mt-4 bg-white border rounded-xl p-4 grid md:grid-cols-5 gap-3 text-sm">
+  <input name="name" placeholder="Parent organisation name" required class="border rounded px-2 py-2">
+  <select name="plan" class="border rounded px-2 py-2">{% for k,p in PLANS.items() %}<option value="{{ k }}">{{ p.name }}</option>{% endfor %}</select>
+  <input name="admin_email" type="email" placeholder="Admin email" required class="border rounded px-2 py-2">
+  <input name="admin_password" type="text" placeholder="Initial password" required minlength="6" class="border rounded px-2 py-2">
+  <button class="rounded bg-brand text-white">Create tenant</button>
+</form>{% endif %}
+
+{% for d in data %}{% set r = d.root %}
+<section class="mt-6 bg-white border rounded-xl p-5">
+  <div class="flex flex-wrap items-center gap-3">
+    {% if r.logo_path %}<img src="/uploads/{{ r.logo_path }}" class="h-12 w-12 object-contain" alt="">{% endif %}
+    <div><h2 class="text-lg font-semibold">{{ r.name }}</h2>
+      <div class="text-xs text-slate-500">{{ plans.PLANS[r.plan].name }} · {{ d.used }}{{ ' / ' ~ d.quota if d.quota else '' }} certs · wallet {{ r.wallet|inr }} · modules: {{ d.modules|join(', ') }}</div></div>
+    <form method="post" action="/admin/orgs/{{ r.id }}/logo" enctype="multipart/form-data" class="ml-auto flex gap-2 items-center text-xs">
+      <input type="file" name="logo" accept="image/*" required><button class="rounded border px-2 py-1">Upload logo</button></form>
+  </div>
+
+  <h3 class="mt-4 text-sm font-semibold">Branches / campuses ({{ d.branches|length }}{{ ' of ' ~ d.allowance if d.allowance is not none else '' }})</h3>
+  <ul class="text-sm mt-1 divide-y">{% for b in d.branches %}<li class="py-1">{{ b.name }}</li>{% else %}<li class="py-1 text-slate-400">None yet</li>{% endfor %}</ul>
+  <form method="post" action="/admin/orgs/{{ r.id }}/branch" class="mt-2 flex gap-2 text-sm"><input name="name" placeholder="New branch name" required class="border rounded px-2 py-1 flex-1"><button class="rounded border px-3">Add branch</button></form>
+
+  <h3 class="mt-4 text-sm font-semibold">Team</h3>
+  <ul class="text-sm mt-1">{% for u in d.users %}<li>{{ u.email }} <span class="text-xs text-slate-500">({{ u.role }})</span></li>{% endfor %}</ul>
+  <form method="post" action="/admin/orgs/{{ r.id }}/user" class="mt-2 grid grid-cols-4 gap-2 text-sm">
+    <input name="email" type="email" placeholder="email" required class="border rounded px-2 py-1"><input name="password" placeholder="password" minlength="6" required class="border rounded px-2 py-1">
+    <select name="role" class="border rounded px-2"><option value="volunteer">Volunteer (scanner only)</option><option value="org_admin">Admin</option></select><button class="rounded border">Add user</button></form>
+
+  <h3 class="mt-4 text-sm font-semibold">Integration API key</h3>
+  <div class="text-xs font-mono break-all">{{ r.api_key or '(none)' }}</div>
+  <form method="post" action="/admin/orgs/{{ r.id }}/apikey"><button class="text-xs underline mt-1">Generate new key</button></form>
+  <div class="text-xs text-slate-500 mt-1">POST <code>/api/v1/events/&lt;slug&gt;/registrations</code> with header <code>X-API-Key</code></div>
+
+  {% if user.role == 'super' %}
+  <details class="mt-4"><summary class="cursor-pointer text-sm font-semibold">Super Admin controls</summary>
+    <form method="post" action="/admin/orgs/{{ r.id }}/settings" class="mt-3 grid md:grid-cols-3 gap-3 text-sm">
+      <label>Plan<select name="plan" class="w-full border rounded px-2 py-1">{% for k,p in PLANS.items() %}<option value="{{ k }}" {{ 'selected' if r.plan==k }}>{{ p.name }}</option>{% endfor %}</select></label>
+      <label>Quota override<input name="quota_override" value="{{ r.quota_override if r.quota_override is not none else '' }}" placeholder="plan default" class="w-full border rounded px-2 py-1"></label>
+      <label>Price override (₹)<input name="price_override" value="{{ r.price_override_inr if r.price_override_inr is not none else '' }}" placeholder="plan default" class="w-full border rounded px-2 py-1"></label>
+      <label>Wallet adjustment (credits)<input name="wallet_adjust" type="number" step="1" value="0" class="w-full border rounded px-2 py-1"></label>
+      <label class="flex items-center gap-2 mt-5"><input type="checkbox" name="active" {{ 'checked' if r.active }}> Active</label>
+      <div class="md:col-span-3"><label class="flex items-center gap-2"><input type="checkbox" name="use_modules" {{ 'checked' if r.modules_override is not none }}> Override plan modules</label>
+        <div class="flex flex-wrap gap-4 mt-2">{% for m in plans.ALL_MODULES %}<label><input type="checkbox" name="modules" value="{{ m }}" {{ 'checked' if m in d.modules }}> {{ MODULE_LABELS[m] }}</label>{% endfor %}</div></div>
+      <button class="md:col-span-3 rounded bg-brand text-white py-2">Save tenant settings</button>
+    </form></details>
+  {% endif %}
+</section>
+{% endfor %}
+{% endblock %}
