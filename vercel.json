@@ -1,12 +1,10 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "vite",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "rewrites": [
-    { "source": "/certificate/:id", "has": [{ "type": "header", "key": "user-agent", "value": "(?i).*(facebookexternalhit|whatsapp|linkedinbot|twitterbot|slackbot|telegrambot|googlebot|bingbot).*" }], "destination": "https://<project-ref>.supabase.co/functions/v1/share-meta?path=/certificate/:id" },
-    { "source": "/events/:slug", "has": [{ "type": "header", "key": "user-agent", "value": "(?i).*(facebookexternalhit|whatsapp|linkedinbot|twitterbot|slackbot|telegrambot|googlebot|bingbot).*" }], "destination": "https://<project-ref>.supabase.co/functions/v1/share-meta?path=/events/:slug" },
-    { "source": "/sitemap.xml", "destination": "https://<project-ref>.supabase.co/functions/v1/sitemap" },
-    { "source": "/((?!assets/|icons/|\\.well-known/|sw\\.js|workbox-).*)", "destination": "/index.html" }
+    { "source": "/((?!assets/|icons/|\\.well-known/|sw\\.js|workbox-|manifest\\.webmanifest|og-default\\.png|robots\\.txt).*)", "destination": "/index.html" }
   ],
   "headers": [
     { "source": "/(.*)", "headers": [

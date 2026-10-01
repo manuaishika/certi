@@ -43,8 +43,10 @@ React SPA (src/)  ──rpc()──►  Postgres functions (supabase/migrations)
 2. Create your first user in *Auth → Users*, then run `supabase/bootstrap_super_admin.sql` with that e-mail.
 3. `supabase secrets set --env-file supabase/.env.secrets` (see `.env.example`) and `supabase functions deploy`.
 4. Optional but recommended: run `supabase/cron.sql` (pg_cron) so webhooks/notifications/AI jobs drain even with no browser open.
-5. **Front end:** deploy to Vercel (config in `vercel.json`: SPA fallback, security headers, crawler rewrites to `share-meta`, sitemap).
-   Set `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_PUBLIC_URL`, and replace `<project-ref>` in `vercel.json`.
+5. **Front end:** import the repo into Vercel (Framework: Vite; `vercel.json` adds the SPA fallback + security headers).
+   Set `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_PUBLIC_URL`. With none set it deploys in demo mode.
+   Optional, for rich link previews: merge `vercel.crawlers.example.json` into `vercel.json` after replacing `<project-ref>`
+   (rewrites WhatsApp/LinkedIn/Google crawlers to the `share-meta` function and serves `/sitemap.xml`).
 6. Payments: configure Razorpay/Stripe webhooks to `…/functions/v1/razorpay-webhook` and `…/stripe-webhook`, then switch **Settings → gateway to live**.
 7. **White-label:** add a wildcard / custom domain to the same deployment. A tenant adds the host under *Organisations*, the Super Admin verifies it.
 8. **Google Play (TWA):** `cd twa && npx @bubblewrap/cli init --manifest https://cergema.mangalhands.com/manifest.webmanifest`
