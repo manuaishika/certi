@@ -6,7 +6,7 @@ language sql stable security definer set search_path = public, app, pg_temp as $
   select jsonb_build_object(
     'overage_inr', app.setting('overage_inr'), 'ai_credits_per_run', app.setting('ai_credits_per_run'),
     'max_cohosts', app.setting('max_cohosts'), 'max_sponsors', app.setting('max_sponsors'),
-    'gateway_mode', app.setting('gateway_mode'))
+    'gateway_mode', app.setting('gateway_mode'), 'usd_per_inr', app.setting('usd_per_inr'))
 $$;
 
 create or replace function public.list_plans() returns jsonb

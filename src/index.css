@@ -1,0 +1,29 @@
+@import '@fontsource/inter/400.css';
+@import '@fontsource/inter/500.css';
+@import '@fontsource/inter/600.css';
+@import '@fontsource/inter/700.css';
+@import '@fontsource/noto-serif/400.css';
+@import '@fontsource/noto-serif/700.css';
+@import '@fontsource/noto-serif-devanagari/400.css';
+@import '@fontsource/noto-serif-devanagari/700.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 210 40% 98%; --foreground: 222 30% 14%;
+    --card: 0 0% 100%; --card-foreground: 222 30% 14%;
+    --primary: 217 78% 21%; --primary-foreground: 0 0% 100%;
+    --secondary: 214 32% 94%; --secondary-foreground: 222 30% 20%;
+    --muted: 214 32% 94%; --muted-foreground: 215 16% 40%;
+    --accent: 45 65% 52%; --accent-foreground: 217 78% 15%;
+    --destructive: 0 72% 46%; --destructive-foreground: 0 0% 100%;
+    --border: 214 24% 87%; --input: 214 24% 82%; --ring: 217 78% 35%;
+    --gold: 45 65% 52%; --radius: 0.6rem;
+  }
+  * { @apply border-border; }
+  body { @apply bg-background text-foreground font-sans antialiased; }
+  [lang="hi"], .deva { font-family: 'Inter', 'Noto Serif Devanagari', system-ui, sans-serif; }
+}

@@ -8,7 +8,11 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:edge": "deno test --config tests/deno/deno.json --allow-env --allow-net=jsr.io --allow-read tests/deno/functions.test.ts",
+    "test:e2e": "playwright test",
+    "check:edge": "for f in supabase/functions/*/index.ts; do deno check \"$f\" || exit 1; done",
+    "test:all": "npm run typecheck && npm test && npm run test:edge && npm run build && npm run test:e2e"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.8",
@@ -41,12 +45,16 @@
     "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "@types/node": "^26.6.3",
     "@types/papaparse": "^5.5.2",
     "@types/qrcode": "^1.5.6",
     "@types/react": "^18.3.31",
     "@types/react-dom": "^18.3.7",
     "@vitejs/plugin-react": "^6.1.1",
     "autoprefixer": "^10.6.1",
+    "deno": "^2.9.6",
+    "esbuild": "^0.28.2",
     "postcss": "^8.5.28",
     "tailwindcss": "^3.4.19",
     "typescript": "^7.0.2",

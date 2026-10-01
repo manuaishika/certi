@@ -1,0 +1,22 @@
+{
+  "packageId": "com.mangalhands.cergema",
+  "host": "cergema.mangalhands.com",
+  "name": "CerGeMA",
+  "launcherName": "CerGeMA",
+  "display": "standalone",
+  "themeColor": "#0b2a5b",
+  "navigationColor": "#0b2a5b",
+  "backgroundColor": "#0b2a5b",
+  "startUrl": "/",
+  "iconUrl": "https://cergema.mangalhands.com/icons/icon-512.png",
+  "maskableIconUrl": "https://cergema.mangalhands.com/icons/maskable-512.png",
+  "enableNotifications": false,
+  "shortcuts": [
+    { "name": "Get my certificate", "short_name": "Certificate", "url": "/claim" },
+    { "name": "Scan entry", "short_name": "Scan", "url": "/admin/scan" }
+  ],
+  "fallbackType": "customtabs",
+  "appVersionName": "1.0.0",
+  "appVersionCode": 1,
+  "signingKey": { "path": "./android.keystore", "alias": "cergema" }
+}

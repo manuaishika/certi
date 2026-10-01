@@ -1,0 +1,19 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "rewrites": [
+    { "source": "/certificate/:id", "has": [{ "type": "header", "key": "user-agent", "value": "(?i).*(facebookexternalhit|whatsapp|linkedinbot|twitterbot|slackbot|telegrambot|googlebot|bingbot).*" }], "destination": "https://<project-ref>.supabase.co/functions/v1/share-meta?path=/certificate/:id" },
+    { "source": "/events/:slug", "has": [{ "type": "header", "key": "user-agent", "value": "(?i).*(facebookexternalhit|whatsapp|linkedinbot|twitterbot|slackbot|telegrambot|googlebot|bingbot).*" }], "destination": "https://<project-ref>.supabase.co/functions/v1/share-meta?path=/events/:slug" },
+    { "source": "/sitemap.xml", "destination": "https://<project-ref>.supabase.co/functions/v1/sitemap" },
+    { "source": "/((?!assets/|icons/|\\.well-known/|sw\\.js|workbox-).*)", "destination": "/index.html" }
+  ],
+  "headers": [
+    { "source": "/(.*)", "headers": [
+      { "key": "X-Content-Type-Options", "value": "nosniff" },
+      { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+      { "key": "Permissions-Policy", "value": "camera=(self), geolocation=(self)" },
+      { "key": "X-Frame-Options", "value": "SAMEORIGIN" } ] },
+    { "source": "/sw.js", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] }
+  ]
+}

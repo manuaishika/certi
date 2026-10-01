@@ -1,71 +1,84 @@
 # CerGeMA — Smart Events, Instant Certificates
 
-Multi-tenant certificate + event-management SaaS (registration → ID pass → QR check-in → approval →
-bilingual certificate → public verification), built **Python-first**:
+Multi-tenant SaaS for event registration, QR attendance and verified bilingual (English + Devanagari) certificates,
+built on the stack specified in the SRS: **React 18 · Vite · Tailwind · shadcn-style UI · Lucide · PWA/TWA · Supabase
+(PostgreSQL, Row Level Security, Edge Functions) · client-side Canvas + jsPDF (300 DPI) · react-i18next ·
+Imagen / FLUX · Razorpay / Stripe · dynamic Open Graph + Schema.org JSON-LD.**
 
-| Layer | Choice |
-|---|---|
-| Web / API | FastAPI + Jinja2 server-rendered pages, HTMX for inline interactions |
-| Data | SQLModel → SQLite (dev) or **PostgreSQL / Supabase** (`DATABASE_URL`) |
-| Certificates | Pillow + libraqm: 300 DPI A4 PNG/PDF, landscape & portrait, real Devanagari shaping |
-| QR | `qrcode` (verification + ID-pass tokens); html5-qrcode (vendored) for the gate scanner |
-| AI backgrounds | Google Imagen via Gemini API when `GEMINI_API_KEY` is set, else a built-in procedural generator |
-| Payments | Razorpay (INR / UPI) and Stripe (USD) over `httpx`; mock gateway when no keys are set |
-| Messaging | Twilio SMS / WhatsApp (logged only when unset) |
-| Front end | Tailwind **pre-built to `app/static/app.css`** (no CDN, no Node at runtime), PWA manifest + service worker, TWA `assetlinks.json` |
-
-## Run it
+## Try it in 30 seconds (no backend)
 
 ```bash
-python -m venv .venv && . .venv/bin/activate
-pip install -r requirements.txt
-uvicorn app.main:app --reload          # http://localhost:8000
-python -m pytest                        # 12 end-to-end tests
+npm install
+npm run dev          # http://localhost:5173
 ```
 
-Seeded logins (first start, `SEED_DEMO=1`): Super Admin `admin@cergema.local / admin123`,
-demo organiser `demo@cergema.local / demo123`. Demo event: `/events/svabhasha-samman-2026`.
-**Change `SECRET_KEY`, `ADMIN_PASSWORD`, set `SEED_DEMO=0` before deploying** (see `.env.example`).
+With no `VITE_SUPABASE_URL`, the app runs in **demo mode**: a complete PostgreSQL (PGlite/WASM) boots inside your browser
+and applies the *same migrations* used in production, so every rule (RLS, quota, gating, billing) behaves identically.
+Data persists in IndexedDB; "Reset demo data" in the yellow banner wipes it. The login page has one-click demo accounts
+(Super Admin, Pro school, Enterprise, Free trust, Gate volunteer, Affiliate). Public pages: `/events/svabhasha-samman-2026`, `/claim`, `/verify/<id>`.
 
-Docker (installs libraqm + Noto fonts for correct Hindi): `docker compose up --build`.
+## Architecture
 
-Devanagari on PDFs needs `libraqm` (Pillow) and a Devanagari font (Noto Sans/Serif Devanagari, Mukta, Lohit, FreeSerif…).
-The console shows a warning banner if shaping is unavailable. Drop extra `.ttf` files in `app/assets/fonts/` or set `FONT_DIR`.
+```
+React SPA (src/)  ──rpc()──►  Postgres functions (supabase/migrations)   ◄── single source of business rules
+   │  Canvas → PNG/PDF (jsPDF)        │ SECURITY DEFINER + explicit authorisation, RLS on every table
+   │  Supabase Auth / Storage         │
+   └──invoke()──►  Edge Functions (supabase/functions): checkout · razorpay/stripe webhooks · ai-worker ·
+                   dispatch-outbox (webhooks + WhatsApp/SMS/email) · erp-api · invite-user · share-meta · sitemap
+```
 
-After editing templates: `tools/build_css.sh` (needs Node, dev-time only) to rebuild `app.css`.
+* **All business logic lives in SQL** (`0002`–`0005`), so there is exactly one implementation, used by Supabase in production
+  and by PGlite in demo/tests. The UI only calls `api.rpc(...)`; `src/lib/backend.ts` picks the transport.
+* **Tenancy:** a tenant is a root org; branches are child orgs. Every RPC re-checks the caller; tables also have RLS for direct reads.
+  The `app` schema (helpers) is not exposed over the API. Service-only functions are `REVOKE`d from `anon`/`authenticated`.
+* **Plans are data** (`plans` table, editable by the Super Admin) with per-tenant overrides of quota, price, modules and branding.
+* **Payments:** prices are computed in the database; fulfilment happens only in signature-verified webhooks (amount and currency
+  re-checked) or the mock gateway, which the database refuses once `gateway_mode = live`.
+* **Outbox pattern:** registrations, issuances and check-ins enqueue signed ERP webhooks and customer notifications transactionally.
+* **AI queue:** jobs carry the plan's priority (Enterprise first); credits are charged at request time and refunded if a job fails.
 
-## What maps to the SRS
+## Deploy
 
-| SRS module | Where |
+1. **Supabase:** create a project; `supabase link --project-ref <ref> && supabase db push` (applies `migrations/`, incl. the `assets` storage bucket).
+2. Create your first user in *Auth → Users*, then run `supabase/bootstrap_super_admin.sql` with that e-mail.
+3. `supabase secrets set --env-file supabase/.env.secrets` (see `.env.example`) and `supabase functions deploy`.
+4. Optional but recommended: run `supabase/cron.sql` (pg_cron) so webhooks/notifications/AI jobs drain even with no browser open.
+5. **Front end:** deploy to Vercel (config in `vercel.json`: SPA fallback, security headers, crawler rewrites to `share-meta`, sitemap).
+   Set `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_PUBLIC_URL`, and replace `<project-ref>` in `vercel.json`.
+6. Payments: configure Razorpay/Stripe webhooks to `…/functions/v1/razorpay-webhook` and `…/stripe-webhook`, then switch **Settings → gateway to live**.
+7. **White-label:** add a wildcard / custom domain to the same deployment. A tenant adds the host under *Organisations*, the Super Admin verifies it.
+8. **Google Play (TWA):** `cd twa && npx @bubblewrap/cli init --manifest https://cergema.mangalhands.com/manifest.webmanifest`
+   (a starting `twa-manifest.json` is included), build, then put the signing-key SHA-256 into `public/.well-known/assetlinks.json`.
+
+## ERP / SIS integration
+
+`POST /functions/v1/erp-api/events/<slug>/registrations` (object or array), `GET …/registrations`, `GET …/certificates` with header `x-api-key`
+(generated per tenant under *Organisations*; stored hashed, shown once). Outbound: register an https URL under *Organisations → webhooks* to receive
+`registration.created`, `certificate.issued`, `attendance.checked_in`, signed `x-cergema-signature: t=<unix>,v1=<hmac_sha256(secret, "<t>.<body>")>`.
+
+## Tests
+
+| Command | What it proves |
 |---|---|
-| A. Certificate engine — dual orientation, templates, custom background + drag-and-drop field mapper, verify QR, feedback gate, WhatsApp/LinkedIn/Facebook share + OG badge | `services/render.py`, `services/backgrounds.py`, `/admin/events/{id}/design`, `/certificate/*`, `/verify/*`, `/share/*` |
-| B. Event lifecycle — offline / online (link gated to registered online attendees) / hybrid, SEO landing + Schema.org JSON-LD, bilingual intake with confirmation modal | `/events/{slug}`, `_confirm.html` |
-| C. Digital ID pass + QR gate scanner + attendance-gated certificates | `/pass/{token}`, `/admin/scan`, `issuing.eligible()` |
-| 5. Parent org → branches, co-host logos (equal size), sponsor grid ("Supported By") | `Org.parent_id`, `Event.cohosts/sponsors` |
-| 7. Plans, per-tenant overrides (quota, price, modules), wallet, AI credits, overage | `services/plans.py`, `/admin/orgs`, `/admin/billing` |
-| 8. Razorpay/UPI, Stripe/USD by country, affiliate coupons with recurring commission | `services/payments.py`, `/admin/coupons` |
-| Phase 4: ERP/SIS REST API | `POST/GET /api/v1/events/{slug}/registrations`, `GET .../certificates` (`X-API-Key`) |
+| `npm test` | 44 tests. Migrations on real Postgres: tenant isolation, RLS, anon/authenticated/service privileges, issuing gates, quota + overage, billing, recurring commission, AI queue priority and refunds, webhooks/outbox, white-label domains. Plus webhook-signature and notification helpers. |
+| `npm run check:edge` | `deno check` of every Edge Function against the real supabase-js types. |
+| `npm run test:edge` | Payment webhooks (bad signature, replay, under-payment, idempotence), ERP API auth and limits, outbox/webhook signing, cron-secret auth, run under Deno with a faked client. |
+| `npm run test:e2e` | Playwright through the whole product in a real browser (registration → pass → claim → feedback gate → 300 DPI PDF/PNG → verify; designer; AI background; scanner; billing; roles; Hindi; white-label host). |
 
-Passwordless retrieval: `/claim` by mobile number or certificate ID. Corrections made in the admin grid
-propagate to already-issued certificates (they render from the live record), so a spelling fix never needs a reissue.
+## What is and isn't verified
 
-## Deviations from the SRS (deliberate)
+Verified here: all SQL (on PGlite, Postgres-compatible), the UI end-to-end in Chromium, and Edge Function types/logic with a faked Supabase client.
 
-* **Python instead of React/Supabase-Edge/jsPDF.** Rendering is server-side (Pillow) rather than client-side jsPDF,
-  which gives identical output on every device and one font stack. Postgres/Supabase is still supported as the database,
-  but tenant isolation is enforced in the application layer (`org_access`) rather than with Row-Level Security.
-* **Tier table followed literally**: QR attendance is an *Enterprise* module, AI gives 5 free runs/month on Pro
-  (then 12 credits/run), co-hosts/sponsors need Pro+. Super Admin can override modules per tenant.
-* Co-branding limit defaults to 1 co-host + 2 sponsors (`MAX_COHOSTS`, `MAX_SPONSORS`) — the open question in SRS §10.
+**Not verified against live services** (needs your keys/project): Supabase Auth sign-in and `invite-user`, the Storage policies in `0006`
+(that block is skipped on PGlite, which has no `storage` schema), Razorpay/Stripe order creation, Twilio/Resend delivery, Imagen/FLUX calls,
+pg_cron scheduling. Demo mode uses seeded `dev_users` instead of Supabase Auth.
 
-## Known gaps — please read
+Known limits: Open Graph images are one static card (titles/descriptions are dynamic per certificate and event); UI languages are English and Hindi
+(add a JSON file in `src/i18n/` for more; certificates already render any script a loaded font supports); no CAPTCHA / rate limiting on public RPCs
+(put Supabase/Cloudflare rate limits in front); certificate files are generated in the browser, so the feedback gate withholds the certificate *data*
+until feedback is given but cannot stop a user from re-downloading afterwards; custom-domain verification is a manual Super Admin step.
 
-* **Not verified against live services**: Razorpay, Stripe, Twilio and Imagen calls are written to their documented
-  REST APIs but could only be exercised in mock/offline mode here. Test each with sandbox keys before launch.
-  Razorpay payments are confirmed by signature-verified redirect *and* `/api/webhooks/razorpay` (set `RAZORPAY_WEBHOOK_SECRET`).
-* **Play Store TWA** needs packaging with Bubblewrap/PWABuilder and your signing key; the app serves the PWA manifest,
-  service worker and `/.well-known/assetlinks.json` (`ANDROID_SHA256`) it requires.
-* No CSRF tokens (cookies are `SameSite=Lax`); add them if you host the console on a shared parent domain.
-* Rate limiting is in-process memory — use a shared store (Redis) when running multiple workers.
-* Only `en`/`hi` UI strings exist (`app/i18n.py`); regional scripts in certificates work if a matching font is installed.
-* Uploaded files live on local disk (`DATA_DIR/uploads`); mount a persistent volume or move to object storage.
+## Defaults worth confirming (SRS §10)
+
+Co-branding = 1 co-host + 2 sponsors (`max_cohosts`, `max_sponsors` in Settings); Pro = ₹9,999/year; Pay-Per-Event ₹1,199 (inside ₹799–1,499); overage ₹0.75; AI 12 credits.
+Tier rules follow the SRS table literally (QR attendance and ID-pass QR are Enterprise modules; the Super Admin can override per tenant).

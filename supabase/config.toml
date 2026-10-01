@@ -1,0 +1,40 @@
+# Supabase CLI project config. `supabase start` runs the whole stack locally; `supabase db reset` applies migrations.
+project_id = "cergema"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]   # the `app` schema is deliberately NOT exposed
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+major_version = 15
+
+[auth]
+enabled = true
+site_url = "http://localhost:5173"
+additional_redirect_urls = ["http://localhost:5173"]
+enable_signup = false              # accounts are created by admins via the invite-user function
+minimum_password_length = 8
+
+[auth.email]
+enable_confirmations = false
+
+[storage]
+enabled = true
+file_size_limit = "8MiB"
+
+# Functions called by third parties / crawlers carry no Supabase JWT, so JWT verification is off.
+# They authenticate themselves: HMAC signatures (payment webhooks) or x-api-key (erp-api).
+[functions.erp-api]
+verify_jwt = false
+[functions.razorpay-webhook]
+verify_jwt = false
+[functions.stripe-webhook]
+verify_jwt = false
+[functions.share-meta]
+verify_jwt = false
+[functions.sitemap]
+verify_jwt = false
