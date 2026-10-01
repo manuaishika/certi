@@ -15,7 +15,16 @@ npm run dev          # http://localhost:5173
 With no `VITE_SUPABASE_URL`, the app runs in **demo mode**: a complete PostgreSQL (PGlite/WASM) boots inside your browser
 and applies the *same migrations* used in production, so every rule (RLS, quota, gating, billing) behaves identically.
 Data persists in IndexedDB; "Reset demo data" in the yellow banner wipes it. The login page has one-click demo accounts
-(Super Admin, Pro school, Enterprise, Free trust, Gate volunteer, Affiliate). Public pages: `/events/svabhasha-samman-2026`, `/claim`, `/verify/<id>`.
+(Super Admin, Pro school, Enterprise, Free trust, Gate volunteer, Affiliate). Public pages: `/events/annual-language-day-2026`, `/claim`, `/verify/<id>`.
+
+## How a new organisation gets started
+
+Visitors land on a page that explains the product, lets them say what they want (organise / get a certificate / verify one), shows a real
+sample certificate, and recommends the cheapest plan covering their needs (driven by live plan data). **Start free** creates an account
+(Supabase Auth, e-mail confirmation) and then `create_my_tenant()` gives them a Free workspace with a getting-started checklist.
+Affiliate links (`/signup?ref=CODE`) attribute the new organisation for recurring commission. The Super Admin only has to bootstrap once.
+In demo mode the first load builds the in-browser database (≈10 s once); the landing page renders immediately from `src/lib/defaults.ts`
+(kept in sync with the database seed by `tests/defaults.test.ts`).
 
 ## Architecture
 
@@ -40,7 +49,7 @@ React SPA (src/)  ──rpc()──►  Postgres functions (supabase/migrations)
 ## Deploy
 
 1. **Supabase:** create a project; `supabase link --project-ref <ref> && supabase db push` (applies `migrations/`, incl. the `assets` storage bucket).
-2. Create your first user in *Auth → Users*, then run `supabase/bootstrap_super_admin.sql` with that e-mail.
+2. Create your first user in *Auth → Users*, then run `supabase/bootstrap_super_admin.sql` with that e-mail (this is the platform owner; everyone else signs up on the site).
 3. `supabase secrets set --env-file supabase/.env.secrets` (see `.env.example`) and `supabase functions deploy`.
 4. Optional but recommended: run `supabase/cron.sql` (pg_cron) so webhooks/notifications/AI jobs drain even with no browser open.
 5. **Front end:** import the repo into Vercel (Framework: Vite; `vercel.json` adds the SPA fallback + security headers).
@@ -49,7 +58,7 @@ React SPA (src/)  ──rpc()──►  Postgres functions (supabase/migrations)
    (rewrites WhatsApp/LinkedIn/Google crawlers to the `share-meta` function and serves `/sitemap.xml`).
 6. Payments: configure Razorpay/Stripe webhooks to `…/functions/v1/razorpay-webhook` and `…/stripe-webhook`, then switch **Settings → gateway to live**.
 7. **White-label:** add a wildcard / custom domain to the same deployment. A tenant adds the host under *Organisations*, the Super Admin verifies it.
-8. **Google Play (TWA):** `cd twa && npx @bubblewrap/cli init --manifest https://cergema.mangalhands.com/manifest.webmanifest`
+8. **Google Play (TWA):** `cd twa && npx @bubblewrap/cli init --manifest https://your-domain.com/manifest.webmanifest`
    (a starting `twa-manifest.json` is included), build, then put the signing-key SHA-256 into `public/.well-known/assetlinks.json`.
 
 ## ERP / SIS integration
@@ -62,7 +71,7 @@ React SPA (src/)  ──rpc()──►  Postgres functions (supabase/migrations)
 
 | Command | What it proves |
 |---|---|
-| `npm test` | 44 tests. Migrations on real Postgres: tenant isolation, RLS, anon/authenticated/service privileges, issuing gates, quota + overage, billing, recurring commission, AI queue priority and refunds, webhooks/outbox, white-label domains. Plus webhook-signature and notification helpers. |
+| `npm test` | 49 tests. Migrations on real Postgres: tenant isolation, RLS, anon/authenticated/service privileges, issuing gates, quota + overage, billing, recurring commission, AI queue priority and refunds, webhooks/outbox, white-label domains. Plus webhook-signature and notification helpers. |
 | `npm run check:edge` | `deno check` of every Edge Function against the real supabase-js types. |
 | `npm run test:edge` | Payment webhooks (bad signature, replay, under-payment, idempotence), ERP API auth and limits, outbox/webhook signing, cron-secret auth, run under Deno with a faked client. |
 | `npm run test:e2e` | Playwright through the whole product in a real browser (registration → pass → claim → feedback gate → 300 DPI PDF/PNG → verify; designer; AI background; scanner; billing; roles; Hindi; white-label host). |

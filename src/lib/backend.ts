@@ -12,6 +12,8 @@ export interface Backend {
   auth: {
     user(): Promise<AuthUser | null>
     signIn(email: string, password: string): Promise<void>
+    /** signedIn=false means the e-mail must be confirmed first */
+    signUp(email: string, password: string): Promise<{ signedIn: boolean }>
     signOut(): Promise<void>
     onChange(cb: () => void): () => void
   }

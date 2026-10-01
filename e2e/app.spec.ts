@@ -9,7 +9,7 @@ test.afterEach(() => { expect(errors, 'browser console errors').toEqual([]) })
 const login = async (page: Page, label: string) => { await page.goto('/login'); await page.getByRole('button', { name: label }).click(); await page.waitForURL(/\/admin/) }
 
 test('participant journey: register → ID pass → claim → feedback gate → PDF/PNG → verify', async ({ page, browser }) => {
-  await page.goto('/events/svabhasha-samman-2026')
+  await page.goto('/events/annual-language-day-2026')
   await page.locator('#name_en').fill('Riya Menghani'); await page.locator('#name_hi').fill('रिया मेंघानी'); await page.locator('#mobile').fill('98111 22233')
   await page.locator('#institution').fill('Sunrise School'); await page.locator('#grade').fill('7')
   await page.getByRole('button', { name: 'Register' }).click()
@@ -18,12 +18,12 @@ test('participant journey: register → ID pass → claim → feedback gate → 
   await page.waitForURL(/\/pass\//); await expect(page.getByText('You are registered')).toBeVisible()
 
   // invalid input is caught before submission
-  await page.goto('/events/svabhasha-samman-2026'); await page.locator('#name_en').fill('X Y'); await page.locator('#mobile').fill('1234567890')
+  await page.goto('/events/annual-language-day-2026'); await page.locator('#name_en').fill('X Y'); await page.locator('#mobile').fill('1234567890')
   await page.getByRole('button', { name: 'Register' }).click(); await expect(page.getByText('valid 10-digit')).toBeVisible()
 
   // organiser approves + issues
   await login(page, 'Pro school')
-  await page.goto('/admin/events'); await page.getByText('Svabhasha Samman 2026').click()
+  await page.goto('/admin/events'); await page.getByText('Annual Language Day 2026').click()
   const cell = page.getByLabel('name_en for Riya Menghani')
   await cell.fill('Riya Menghanii'); await cell.blur(); await cell.fill('Riya Menghani'); await cell.blur()   // edit and edit-back both persist
   await page.getByRole('button', { name: 'Approve all' }).click()
@@ -48,7 +48,7 @@ test('participant journey: register → ID pass → claim → feedback gate → 
 
 test('designer: drag a field, AI background, plan gating', async ({ page }) => {
   await login(page, 'Pro school')
-  await page.goto('/admin/events'); await page.getByText('Svabhasha Samman 2026').click(); await page.getByText('Certificate designer').click()
+  await page.goto('/admin/events'); await page.getByText('Annual Language Day 2026').click(); await page.getByText('Certificate designer').click()
   const handle = page.locator('[data-field=name]'); await expect(handle).toBeVisible()
   const b = (await handle.boundingBox())!
   await page.mouse.move(b.x + 8, b.y + 5); await page.mouse.down(); await page.mouse.move(b.x + 8, b.y + 40, { steps: 5 }); await page.mouse.up()
@@ -80,9 +80,53 @@ test('roles: volunteer is confined to the scanner, affiliate to the partner port
 
 test('Hindi UI and white-label host', async ({ page }) => {
   await page.goto('/'); await page.getByRole('button', { name: 'Change language' }).click()
-  await expect(page.getByRole('heading', { name: 'स्मार्ट इवेंट, तुरंत प्रमाणपत्र' })).toBeVisible()
-  await page.reload(); await expect(page.getByRole('heading', { name: 'स्मार्ट इवेंट, तुरंत प्रमाणपत्र' })).toBeVisible()   // persisted
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('मिनटों में सत्यापित प्रमाणपत्र')
+  await page.reload(); await expect(page.getByRole('heading', { level: 1 })).toContainText('मिनटों में सत्यापित प्रमाणपत्र')   // persisted
   // a tenant's verified custom domain swaps in their brand and hides CerGeMA's
   await page.goto('http://olympiad.localhost:4173/'); await expect(page.getByRole('link', { name: 'Olympiad Certs' })).toBeVisible({ timeout: 45_000 })   // fresh origin boots its own in-browser DB
-  await expect(page.getByText('Mangal Hands')).toHaveCount(0)
+  await expect(page.getByText('CerGeMA')).toHaveCount(0)
+})
+
+test('a visitor understands the product and is guided to the right plan', async ({ page }) => {
+  await page.goto('/')
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('verified certificates in minutes')
+  await expect(page.getByRole('heading', { name: 'What brings you here?' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'What is CerGeMA?' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'How it works' })).toBeVisible()
+  await expect(page.locator('figure canvas')).toBeVisible()                                  // a real sample certificate is rendered
+  await expect(page.getByText(/Mangal/i)).toHaveCount(0)
+  await expect(page.getByText('Your best fit')).toBeVisible({ timeout: 2000 })                // plan finder works before the demo DB has finished booting
+
+  // "find your plan": needs map to the cheapest plan that covers them
+  const best = page.getByText('Your best fit').locator('..')
+  await expect(best).toContainText('Free Community')
+  await page.getByLabel(/People should register themselves/).check();           await expect(best).toContainText('Pay-Per-Event')
+  await page.getByLabel(/Online or hybrid/).check();                             await expect(best).toContainText('Institutional Pro')
+  await page.getByLabel(/Only people who actually attended/).check();           await expect(best).toContainText('Enterprise Custom')
+  await expect(best).toContainText('wouldn’t cover')
+
+  // participants are routed from the home page, not left to guess
+  await page.getByPlaceholder('Mobile number').fill('9876501234'); await page.getByRole('button', { name: 'Find my certificate' }).click()
+  await page.waitForURL(/\/claim\?q=9876501234/)
+})
+
+test('a new organisation signs itself up, is guided, and is isolated from others', async ({ page }) => {
+  await page.goto('/signup?ref=PARTNER20')
+  await expect(page.getByText('Referral code')).toBeVisible()
+  await page.getByLabel('Organisation name').fill('Riverdale Public School'); await page.getByLabel('Your name').fill('Asha Rao')
+  await page.getByLabel('Work email').fill('asha@riverdale.edu'); await page.getByLabel('Password').fill('short'); await page.getByRole('button', { name: 'Create my workspace' }).click()
+  await expect(page).toHaveURL(/\/signup/)                                               // 8+ chars enforced
+  await page.getByLabel('Password').fill('a-long-password'); await page.getByRole('button', { name: 'Create my workspace' }).click()
+  await page.waitForURL(/\/admin$/); await expect(page.getByRole('heading', { name: 'Riverdale Public School' })).toBeVisible()
+  await expect(page.getByText('Getting started')).toBeVisible(); await expect(page.getByText('0 of 4 done')).toBeVisible()
+  await expect(page.getByText('You’re on the Free plan')).toBeVisible()
+
+  await page.goto('/admin/events/new'); await page.getByLabel(/^Title\*/).fill('Founders Day'); await page.getByRole('button', { name: 'Create event' }).click()
+  await page.waitForURL(/\/admin\/events\/[0-9a-f-]{36}$/)
+  await page.goto('/admin'); await expect(page.getByText('1 of 4 done')).toBeVisible({ timeout: 30_000 })
+  await page.goto('/admin/events'); await expect(page.getByText('Founders Day')).toBeVisible(); await expect(page.getByText('Annual Language Day 2026')).toHaveCount(0)   // other tenants' events invisible
+  await page.getByText('Logout').click()
+
+  await page.goto('/signup'); await page.getByLabel('Organisation name').fill('Dup'); await page.getByLabel('Work email').fill('asha@riverdale.edu'); await page.getByLabel('Password').fill('a-long-password')
+  await page.getByRole('button', { name: 'Create my workspace' }).click(); await expect(page.getByRole('alert')).toContainText('already registered')
 })

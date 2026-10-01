@@ -1,6 +1,6 @@
 {
-  "packageId": "com.mangalhands.cergema",
-  "host": "cergema.mangalhands.com",
+  "packageId": "com.cergema.app",
+  "host": "your-domain.com",
   "name": "CerGeMA",
   "launcherName": "CerGeMA",
   "display": "standalone",
@@ -8,8 +8,8 @@
   "navigationColor": "#0b2a5b",
   "backgroundColor": "#0b2a5b",
   "startUrl": "/",
-  "iconUrl": "https://cergema.mangalhands.com/icons/icon-512.png",
-  "maskableIconUrl": "https://cergema.mangalhands.com/icons/maskable-512.png",
+  "iconUrl": "https://your-domain.com/icons/icon-512.png",
+  "maskableIconUrl": "https://your-domain.com/icons/maskable-512.png",
   "enableNotifications": false,
   "shortcuts": [
     { "name": "Get my certificate", "short_name": "Certificate", "url": "/claim" },

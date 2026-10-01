@@ -19,7 +19,7 @@ function fingerprint(s: string) { let h = 5381; for (let i = 0; i < s.length; i+
 async function open(): Promise<PGlite> {
   const files = Object.keys(migrations).sort().map(k => migrations[k])
   const stamp = fingerprint([bootstrap, seed, ...files].join('\n--\n'))
-  let db = new PGlite(DB_KEY)
+  let db = new PGlite(DB_KEY, { relaxedDurability: false })   // a write is only acknowledged once it is in IndexedDB, so a quick page reload can't lose it
   await db.waitReady
   const has = await db.query<{ stamp: string }>(`select to_regclass('public.demo_meta') is not null as ok`).then(r => (r.rows[0] as any).ok).catch(() => false)
   let current = ''
@@ -27,7 +27,7 @@ async function open(): Promise<PGlite> {
   if (current !== stamp) {   // first run, or migrations changed: rebuild from scratch
     await db.close()
     indexedDB.deleteDatabase('/pglite/cergema-demo-v1')
-    db = new PGlite(DB_KEY)
+    db = new PGlite(DB_KEY, { relaxedDurability: false })
     await db.waitReady
     await db.exec(`drop schema if exists public cascade; drop schema if exists app cascade; drop schema if exists auth cascade; create schema public;
       do $$ begin if exists (select 1 from pg_roles where rolname='anon') then
@@ -44,6 +44,9 @@ export async function createDemoBackend(): Promise<Backend> {
   let db = await open()
   const listeners = new Set<() => void>()
   const uid = () => localStorage.getItem(UID_KEY) ?? ''
+  /** PGlite does not reliably persist after an explicit transaction, so flush to IndexedDB before reporting success.
+   *  Otherwise a quick page reload (or closing the tab) right after an action could silently lose it. */
+  const flush = () => db.syncToFs().catch(() => {})
 
   async function asRole<T>(role: 'anon' | 'authenticated' | 'service_role', sub: string, run: (q: any) => Promise<T>): Promise<T> {
     return db.transaction(async (tx) => {
@@ -55,7 +58,9 @@ export async function createDemoBackend(): Promise<Backend> {
 
   const rpc = async (fn: string, args: Record<string, any> = {}): Promise<any> => {
     const id = uid()
-    return asRole(id ? 'authenticated' : 'anon', id, (tx) => callFn(tx, fn, args))
+    const out = await asRole(id ? 'authenticated' : 'anon', id, (tx) => callFn(tx, fn, args))
+    await flush()
+    return out
   }
 
   return {
@@ -65,7 +70,7 @@ export async function createDemoBackend(): Promise<Backend> {
       async user() {
         const id = uid()
         if (!id) return null
-        const r = await db.query<{ email: string }>('select email from public.profiles where id = $1', [id])
+        const r = await db.query<{ email: string }>('select email from public.dev_users where profile_id = $1', [id])
         return r.rows[0] ? { id, email: r.rows[0].email } : null
       },
       async signIn(email, password) {
@@ -73,6 +78,17 @@ export async function createDemoBackend(): Promise<Backend> {
         if (!r.rows[0]) throw new Error('Invalid email or password')
         localStorage.setItem(UID_KEY, r.rows[0].profile_id)
         listeners.forEach(l => l())
+      },
+      async signUp(email, password) {
+        const em = email.trim().toLowerCase()
+        if (password.length < 8) throw new Error('Password must be at least 8 characters')
+        const dup = await db.query('select 1 from public.dev_users where email = $1', [em])
+        if (dup.rows.length) throw new Error('That email is already registered. Please log in.')
+        const id = crypto.randomUUID()
+        await db.query('insert into public.dev_users (email, password, profile_id) values ($1,$2,$3)', [em, password, id])
+        await flush()
+        localStorage.setItem(UID_KEY, id); listeners.forEach(l => l())
+        return { signedIn: true }
       },
       async signOut() { localStorage.removeItem(UID_KEY); listeners.forEach(l => l()) },
       onChange(cb) { listeners.add(cb); return () => listeners.delete(cb) },
@@ -96,6 +112,7 @@ export async function createDemoBackend(): Promise<Backend> {
         const id = crypto.randomUUID()
         await db.query('insert into public.profiles (id, email, name, role, org_id, coupon_code) values ($1,$2,$3,$4,$5,$6)', [id, b.email.toLowerCase(), b.name ?? '', b.role, org, b.coupon_code ?? null])
         await db.query('insert into public.dev_users (email, password, profile_id) values ($1,$2,$3)', [b.email.toLowerCase(), b.password, id])
+        await flush()
         return { id }
       }
       if (fn === 'ai-worker') {

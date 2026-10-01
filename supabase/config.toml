@@ -16,11 +16,11 @@ major_version = 15
 enabled = true
 site_url = "http://localhost:5173"
 additional_redirect_urls = ["http://localhost:5173"]
-enable_signup = false              # accounts are created by admins via the invite-user function
+enable_signup = true               # organisations sign themselves up (Free plan), then create_my_tenant() gives them a workspace
 minimum_password_length = 8
 
 [auth.email]
-enable_confirmations = false
+enable_confirmations = true         # verify the e-mail before a workspace can be created
 
 [storage]
 enabled = true

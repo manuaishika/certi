@@ -22,6 +22,13 @@ export async function createSupabaseBackend(): Promise<Backend> {
         const { error } = await sb.auth.signInWithPassword({ email, password })
         if (error) throw new Error('Invalid email or password')
       },
+      async signUp(email, password) {
+        const { data, error } = await sb.auth.signUp({ email, password, options: { emailRedirectTo: window.location.origin + '/onboarding' } })
+        if (error) throw new Error(/registered|exists/i.test(error.message) ? 'That email is already registered. Please log in.' : error.message)
+        // an obfuscated "user already exists" response has no identities
+        if (data.user && data.user.identities?.length === 0) throw new Error('That email is already registered. Please log in.')
+        return { signedIn: !!data.session }
+      },
       async signOut() { await sb.auth.signOut() },
       onChange(cb) {
         const { data } = sb.auth.onAuthStateChange(() => cb())

@@ -1,7 +1,7 @@
 import { pageSize } from './layout'
 
 type Ctx = CanvasRenderingContext2D
-export const TEMPLATE_LABELS: Record<string, string> = { classic: 'Classic Gold', modern: 'Modern Band', mangal: 'Mangal Tricolour' }
+export const TEMPLATE_LABELS: Record<string, string> = { classic: 'Classic Gold', modern: 'Modern Band', tricolour: 'Tricolour' }
 
 function frame(c: Ctx, w: number, h: number, inset: number, width: number, color: string) {
   c.strokeStyle = color; c.lineWidth = width
@@ -14,7 +14,7 @@ export function drawTemplate(c: Ctx, name: string, w: number, h: number, accent:
     c.fillStyle = '#ffffff'; c.fillRect(0, 0, w, h)
     c.fillStyle = accent; c.fillRect(0, 0, 6 * u, h); c.fillRect(w - 2 * u, 0, 2 * u, h)
     c.fillStyle = '#d4af37'; c.beginPath(); c.moveTo(6 * u, 0); c.lineTo(18 * u, 0); c.lineTo(6 * u, 12 * u); c.closePath(); c.fill()
-  } else if (name === 'mangal') {
+  } else if (name === 'tricolour') {
     c.fillStyle = '#fffaf0'; c.fillRect(0, 0, w, h)
     ;['#ff9933', '#cfcfcf', '#138808'].forEach((col, i) => frame(c, w, h, (2.2 + i * 1.3) * u, 1.2 * u, col))
     frame(c, w, h, 7 * u, 0.3 * u, accent)
@@ -29,7 +29,7 @@ export function drawTemplate(c: Ctx, name: string, w: number, h: number, accent:
 // ---------------------------------------------------------------- procedural "AI" border
 const PALETTES: Record<string, [string, string, string]> = {
   green: ['#0f5132', '#2e8b57', '#d4af37'], eco: ['#0f5132', '#2e8b57', '#d4af37'], leaf: ['#0f5132', '#2e8b57', '#d4af37'],
-  saffron: ['#ff9933', '#138808', '#1e3a8a'], mangal: ['#ff9933', '#138808', '#1e3a8a'], blue: ['#0b2a5b', '#2563eb', '#d4af37'],
+  saffron: ['#ff9933', '#138808', '#1e3a8a'], tricolour: ['#ff9933', '#138808', '#1e3a8a'], blue: ['#0b2a5b', '#2563eb', '#d4af37'],
   royal: ['#2b1055', '#7c3aed', '#d4af37'], red: ['#7f1d1d', '#dc2626', '#d4af37'], gold: ['#8a6d1d', '#d4af37', '#f3e3a1'],
   ocean: ['#0c4a6e', '#0ea5e9', '#e0f2fe'], sunset: ['#9a3412', '#f97316', '#fde68a'], purple: ['#3b0764', '#9333ea', '#f0abfc'],
 }

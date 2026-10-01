@@ -15,19 +15,19 @@ describe('public registration + pass', () => {
     expect(await rpc(db, 'anon', 'validate_registration', [FORM])).toEqual([])
   })
   it('registers, normalises mobile, is idempotent, and exposes online link only to online attendees', async () => {
-    const a = await rpc(db, 'anon', 'register_participant', ['svabhasha-samman-2026', FORM])
-    const b = await rpc(db, 'anon', 'register_participant', ['svabhasha-samman-2026', FORM])
+    const a = await rpc(db, 'anon', 'register_participant', ['annual-language-day-2026', FORM])
+    const b = await rpc(db, 'anon', 'register_participant', ['annual-language-day-2026', FORM])
     expect(a.token).toBe(b.token)
     const pass = await rpc(db, 'anon', 'get_pass', [a.token])
     expect(pass.registration.name_hi).toBe('टेस्ट छात्र')
     expect(pass.meeting_url).toBe('')            // offline attendee
     expect(pass.qr_enabled).toBe(false)           // Pro plan has no ID-pass module (SRS tier table)
-    const o = await rpc(db, 'anon', 'register_participant', ['svabhasha-samman-2026', { ...FORM, name_en: 'Online Kid', mobile: '98765 22222', attend_mode: 'online' }])
+    const o = await rpc(db, 'anon', 'register_participant', ['annual-language-day-2026', { ...FORM, name_en: 'Online Kid', mobile: '98765 22222', attend_mode: 'online' }])
     expect((await rpc(db, 'anon', 'get_pass', [o.token])).meeting_url).toContain('meet.google.com')
   })
   it('refuses registration on a plan without the registration module and hides meeting_url on the public event', async () => {
     await rpc(db, 'super', 'create_tenant', ['Free Tenant', 'free'])
-    const ev = await rpc(db, 'anon', 'get_public_event', ['svabhasha-samman-2026'])
+    const ev = await rpc(db, 'anon', 'get_public_event', ['annual-language-day-2026'])
     expect(ev.event.meeting_url).toBeUndefined()
     expect(ev.lifecycle).toBe(true)
   })
@@ -41,7 +41,7 @@ describe('public registration + pass', () => {
 describe('tenant isolation (RLS + RPC)', () => {
   it('direct table reads only show your own tenant', async () => {
     const own = await as<any>(db, 'pro', 'select slug from public.events')
-    expect(own.map(r => r.slug)).toEqual(['svabhasha-samman-2026'])
+    expect(own.map(r => r.slug)).toEqual(['annual-language-day-2026'])
     const all = await as<any>(db, 'super', 'select slug from public.events order by slug')
     expect(all.length).toBe(2)
     expect(await as(db, 'anon', 'select * from public.registrations')).toEqual([])
@@ -259,10 +259,10 @@ describe('integrations', () => {
     await rpc(db, 'pro', 'remove_webhook', [hook.id])
   })
   it('ERP import / read via service role is tenant-scoped', async () => {
-    const r = await rpc<any>(db, 'service', 'erp_import', [IDS.proOrg, 'svabhasha-samman-2026', [{ name_en: 'Api Kid', mobile: '9123456780' }, { name_en: 'X', mobile: '1' }]])
+    const r = await rpc<any>(db, 'service', 'erp_import', [IDS.proOrg, 'annual-language-day-2026', [{ name_en: 'Api Kid', mobile: '9123456780' }, { name_en: 'X', mobile: '1' }]])
     expect(r.created).toBe(1); expect(r.errors).toHaveLength(1)
-    await rejects(rpc(db, 'service', 'erp_import', [IDS.entOrg, 'svabhasha-samman-2026', []]), /not found/i)
-    expect((await rpc<any[]>(db, 'service', 'erp_registrations', [IDS.proOrg, 'svabhasha-samman-2026'])).length).toBeGreaterThan(2)
+    await rejects(rpc(db, 'service', 'erp_import', [IDS.entOrg, 'annual-language-day-2026', []]), /not found/i)
+    expect((await rpc<any[]>(db, 'service', 'erp_registrations', [IDS.proOrg, 'annual-language-day-2026'])).length).toBeGreaterThan(2)
   })
   it('API keys are stored hashed and shown once', async () => {
     const key = await rpc<string>(db, 'pro', 'rotate_api_key', [IDS.proOrg])
@@ -274,5 +274,37 @@ describe('integrations', () => {
   it('bulk import validates rows', async () => {
     const r = await rpc<any>(db, 'pro', 'import_registrations', [IDS.evPro, [{ name_en: 'Bulk One', mobile: '9000000001' }, { name_en: '', mobile: 'x' }]])
     expect(r.created).toBe(1); expect(r.errors[0]).toMatch(/^Row 3/)
+  })
+})
+
+describe('self-service signup', () => {
+  const NEW = 'b0000000-0000-0000-0000-0000000000a1'
+  it('lets a brand-new login create a Free workspace, once', async () => {
+    ;(IDS as any).newbie = NEW
+    await rejects(rpc(db, 'anon', 'create_my_tenant', ['X School', '', 'x@y.com', '']), /unauthorized/)
+    expect(await rpc(db, 'newbie' as any, 'get_me')).toBeNull()                       // authenticated but no profile yet
+    const r = await rpc<any>(db, 'newbie' as any, 'create_my_tenant', ['Sunrise Academy', 'Asha', 'Asha@Sunrise.edu', 'partner20'])
+    expect(r.org_id).toBeTruthy()
+    const me = await rpc<any>(db, 'newbie' as any, 'get_me')
+    expect(me.profile).toMatchObject({ role: 'org_admin', email: 'asha@sunrise.edu' })
+    expect(me.tenant).toMatchObject({ name: 'Sunrise Academy', plan: 'free', modules: ['certificates'], quota: 100 })
+    await rejects(rpc(db, 'newbie' as any, 'create_my_tenant', ['Another', '', 'a@b.com', '']), /already have an account/)
+  })
+  it('attributes referrals to the affiliate; bad codes and bad emails are rejected or ignored', async () => {
+    const aff = await rpc<any>(db, 'affiliate', 'my_affiliate')
+    expect(aff.referred_tenants).toBeGreaterThanOrEqual(1)
+    const other = 'b0000000-0000-0000-0000-0000000000a2'; ;(IDS as any).other = other
+    await rejects(rpc(db, 'other' as any, 'create_my_tenant', ['Org', '', 'not-an-email', '']), /valid email/)
+    await rejects(rpc(db, 'other' as any, 'create_my_tenant', ['', '', 'ok@ok.com', '']), /organisation name/)
+    await rpc(db, 'other' as any, 'create_my_tenant', ['Org Two', '', 'two@ok.com', 'NOSUCHCODE'])
+    expect((await db.query<any>(`select referral_coupon from public.orgs where name='Org Two'`)).rows[0].referral_coupon).toBeNull()
+  })
+  it('a new workspace is isolated and limited by the Free plan', async () => {
+    const mine = await as<any>(db, 'newbie' as any, 'select name from public.orgs')
+    expect(mine.map(r => r.name)).toEqual(['Sunrise Academy'])
+    const id = await rpc<string>(db, 'newbie' as any, 'create_event', [{ org_id: (await rpc<any>(db, 'newbie' as any, 'get_me')).tenant.id, title: 'My First Event' }])
+    await rejects(rpc(db, 'newbie' as any, 'get_event_admin', [IDS.evPro]), /forbidden/)
+    expect((await rpc<any>(db, 'anon', 'get_public_event', ['my-first-event'])).registration_enabled).toBe(false)
+    expect(id).toBeTruthy()
   })
 })

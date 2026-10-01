@@ -10,6 +10,8 @@ import ClaimPage from './pages/public/ClaimPage'
 import CertificatePage from './pages/public/CertificatePage'
 import VerifyPage from './pages/public/VerifyPage'
 import LoginPage from './pages/public/LoginPage'
+import SignupPage from './pages/public/SignupPage'
+import Onboarding from './pages/public/Onboarding'
 import Dashboard from './pages/admin/Dashboard'
 import Events from './pages/admin/Events'
 import EventNew from './pages/admin/EventNew'
@@ -41,6 +43,8 @@ export default function App() {
             <Route path="certificate/:id" element={<CertificatePage />} />
             <Route path="verify/:id" element={<VerifyPage />} />
             <Route path="login" element={<LoginPage />} />
+            <Route path="signup" element={<SignupPage />} />
+            <Route path="onboarding" element={<Onboarding />} />
             <Route path="*" element={<p className="py-20 text-center text-muted-foreground">Page not found.</p>} />
           </Route>
           <Route path="admin" element={<AdminLayout />}>

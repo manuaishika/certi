@@ -313,7 +313,7 @@ declare e public.events;
 begin
   perform app.assert_admin(); e := app.event_for(p_event);
   if p_accent !~ '^#[0-9a-fA-F]{6}$' then raise exception 'Bad colour' using errcode = '22023'; end if;
-  if p_template in ('classic','modern','mangal') then e.template := p_template; e.bg_url := ''; end if;
+  if p_template in ('classic','modern','tricolour') then e.template := p_template; e.bg_url := ''; end if;
   if p_orientation in ('landscape','portrait') and p_orientation <> e.orientation then
     e.orientation := p_orientation; e.layout := '{}';
     if e.template = 'custom' then e.template := 'classic'; e.bg_url := ''; end if;

@@ -1,4 +1,5 @@
-import { Link, Outlet } from 'react-router-dom'
+import { useEffect } from 'react'
+import { Link, Outlet, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { Languages } from 'lucide-react'
 import { useAuth } from '@/lib/auth'
@@ -29,17 +30,25 @@ export function Header({ admin }: { admin?: boolean }) {
   const { t } = useTranslation()
   const { me, signOut } = useAuth()
   const b = useBranding()
+  const home = me ? (me.profile.role === 'volunteer' ? '/admin/scan' : me.profile.role === 'affiliate' ? '/admin/partner' : '/admin') : '/signup'
+  const anchors = !admin && !b.tenantName
   return (
-    <header className="bg-primary text-primary-foreground">
+    <header className="sticky top-0 z-40 bg-primary text-primary-foreground">
       <div className="container flex items-center gap-4 py-3">
         <Link to="/" className="flex items-center gap-2 text-lg font-bold"><img src={b.logo} alt="" className="h-8 w-8 rounded bg-white/10 object-contain" />{b.appName}</Link>
-        {!b.hideBranding && <span className="hidden text-xs text-blue-200 md:inline">{t('tagline')}</span>}
-        <nav className="ml-auto flex items-center gap-4 text-sm">
-          <Link className="hover:text-accent" to="/claim">{t('nav.claim')}</Link>
+        {anchors && <nav className="ml-6 hidden items-center gap-5 text-sm md:flex" aria-label="Sections">
+          <Link className="hover:text-accent" to={{ pathname: '/', hash: '#how' }}>{t('nav.how')}</Link>
+          <Link className="hover:text-accent" to={{ pathname: '/', hash: '#plans' }}>{t('nav.plans')}</Link>
+          <Link className="hover:text-accent" to={{ pathname: '/', hash: '#faq' }}>{t('nav.faq')}</Link></nav>}
+        <nav className="ml-auto flex items-center gap-3 text-sm sm:gap-4">
+          <Link className="hidden hover:text-accent sm:inline" to="/claim">{t('nav.claim')}</Link>
           {me ? <>
-            {!admin && <Link className="hover:text-accent" to={me.profile.role === 'volunteer' ? '/admin/scan' : me.profile.role === 'affiliate' ? '/admin/partner' : '/admin'}>{t('nav.console')}</Link>}
+            {!admin && <Link className="hover:text-accent" to={home}>{t('nav.console')}</Link>}
             <button className="hover:text-accent" onClick={() => signOut()}>{t('nav.logout')}</button>
-          </> : <Link className="hover:text-accent" to="/login">{t('nav.login')}</Link>}
+          </> : <>
+            <Link className="hover:text-accent" to="/login">{t('nav.login')}</Link>
+            {!b.tenantName && <Link className="rounded-md bg-accent px-3 py-1.5 font-semibold text-accent-foreground hover:bg-accent/90" to="/signup">{t('nav.start')}</Link>}
+          </>}
           <LanguageSwitch />
         </nav>
       </div>
@@ -48,13 +57,15 @@ export function Header({ admin }: { admin?: boolean }) {
 
 export function PublicLayout() {
   const b = useBranding()
+  const { hash, pathname } = useLocation()
+  useEffect(() => { if (hash) setTimeout(() => document.getElementById(hash.slice(1))?.scrollIntoView({ behavior: 'smooth' }), 50); else window.scrollTo(0, 0) }, [hash, pathname])
   return (
     <div className="flex min-h-screen flex-col">
       <DemoBanner />
       <Header />
       <main className="container flex-1 py-6"><Outlet /></main>
       <footer className="py-6 text-center text-xs text-muted-foreground">
-        © {b.tenantName ?? 'CerGeMA'} {!b.hideBranding && <>· Mangal Hands · <Link className="underline" to="/claim">Get my certificate</Link></>}
+        © {b.tenantName ?? 'CerGeMA'} {!b.hideBranding && <>· <Link className="underline" to="/claim">Get my certificate</Link></>}
       </footer>
     </div>)
 }

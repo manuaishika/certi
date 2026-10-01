@@ -135,12 +135,12 @@ export async function renderCertificate(canvas: HTMLCanvasElement, d: CertInput,
     if (logos.length) { text(c, e.sponsor_label, sx, sy - sz('sponsors') * .75, base * .016, muted); logoRow(c, logos, sx, sy, sz('sponsors'), base * .04) }
     else text(c, `${e.sponsor_label}: ${sponsors.map(s => s.name).join('   |   ')}`, sx, sy, base * .018, muted, false, W * .8)
   }
-  if (d.watermark) text(c, 'Powered by CerGeMA · cergema.mangalhands.com', W / 2, H * .915, base * .014, muted)
+  if (d.watermark) text(c, 'Powered by CerGeMA', W / 2, H * .915, base * .014, muted)
   return canvas
 }
 
 export const sampleInput = (event: CertInput['event'], org: CertInput['org'], branch: string | null, watermark: boolean): CertInput => ({
-  event, org, branch, watermark, cert_id: 'CGM-SAMPLE0001', issued_at: new Date().toISOString(), verify_url: 'https://cergema.mangalhands.com/verify/CGM-SAMPLE0001',
+  event, org, branch, watermark, cert_id: 'CGM-SAMPLE0001', issued_at: new Date().toISOString(), verify_url: 'https://example.com/verify/CGM-SAMPLE0001',
   person: { name_en: 'Aarav Sharma', name_hi: 'आरव शर्मा', grade: '8', institution: 'Demo Public School' },
 })
 

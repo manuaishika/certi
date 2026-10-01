@@ -17,8 +17,9 @@ const LINKS = [
 ]
 
 export function AdminLayout() {
-  const { me, loading } = useAuth()
+  const { me, loading, needsOnboarding } = useAuth()
   if (loading) return <div className="grid min-h-screen place-items-center text-muted-foreground">Loading…</div>
+  if (needsOnboarding) return <Navigate to="/onboarding" replace />
   if (!me) return <Navigate to="/login" replace />
   const links = LINKS.filter(l => l.roles.includes(me.profile.role))
   return (
