@@ -14,6 +14,8 @@ export interface CertInput {
   issued_at: string
   verify_url: string
   watermark: boolean
+  /** replaces the computed date (used for placeholder samples) */
+  dateText?: string
 }
 
 const SERIF = '"Noto Serif", "Noto Serif Devanagari", Georgia, serif'
@@ -103,7 +105,7 @@ export async function renderCertificate(canvas: HTMLCanvasElement, d: CertInput,
   if (d.person.name_hi) text(c, d.person.name_hi, ...pos('name_hi'), sz('name_hi'), ink, true, W * .7)
 
   const when = new Date(e.starts_at ?? d.issued_at)
-  const dateTxt = when.toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })
+  const dateTxt = d.dateText ?? when.toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })
   const body = e.cert_body.replaceAll('{event}', e.title).replaceAll('{date}', dateTxt).replaceAll('{name}', d.person.name_en).replaceAll('{grade}', d.person.grade)
   const [bx, by] = pos('body'); c.font = `400 ${sz('body')}px ${SERIF}`
   wrap(c, body, W * (e.orientation === 'landscape' ? .62 : .72)).forEach((ln, i) => text(c, ln, bx, by + i * sz('body') * 1.45, sz('body'), ink))

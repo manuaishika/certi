@@ -80,8 +80,8 @@ test('roles: volunteer is confined to the scanner, affiliate to the partner port
 
 test('Hindi UI and white-label host', async ({ page }) => {
   await page.goto('/'); await page.getByRole('button', { name: 'Change language' }).click()
-  await expect(page.getByRole('heading', { level: 1 })).toContainText('मिनटों में सत्यापित प्रमाणपत्र')
-  await page.reload(); await expect(page.getByRole('heading', { level: 1 })).toContainText('मिनटों में सत्यापित प्रमाणपत्र')   // persisted
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('हर कार्यक्रम')
+  await page.reload(); await expect(page.getByRole('heading', { level: 1 })).toContainText('हर कार्यक्रम')   // persisted
   // a tenant's verified custom domain swaps in their brand and hides CerGeMA's
   await page.goto('http://olympiad.localhost:4173/'); await expect(page.getByRole('link', { name: 'Olympiad Certs' })).toBeVisible({ timeout: 45_000 })   // fresh origin boots its own in-browser DB
   await expect(page.getByText('CerGeMA')).toHaveCount(0)
@@ -89,10 +89,11 @@ test('Hindi UI and white-label host', async ({ page }) => {
 
 test('a visitor understands the product and is guided to the right plan', async ({ page }) => {
   await page.goto('/')
-  await expect(page.getByRole('heading', { level: 1 })).toContainText('verified certificates in minutes')
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('Every event, recorded and recognised.')
   await expect(page.getByRole('heading', { name: 'What brings you here?' })).toBeVisible()
-  await expect(page.getByRole('heading', { name: 'What is CerGeMA?' })).toBeVisible()
-  await expect(page.getByRole('heading', { name: 'How it works' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: /Paper certificates vanish/ })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'How organisers run it' })).toBeVisible()
+  await expect(page.getByText(/12,400|1\.8M|98%/)).toHaveCount(0)                       // no invented statistics
   await expect(page.locator('figure canvas')).toBeVisible()                                  // a real sample certificate is rendered
   await expect(page.getByText(/Mangal/i)).toHaveCount(0)
   await expect(page.getByText('Your best fit')).toBeVisible({ timeout: 2000 })                // plan finder works before the demo DB has finished booting

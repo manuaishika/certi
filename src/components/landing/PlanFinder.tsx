@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowRight, Check, X } from 'lucide-react'
 import type { Module, Plan } from '@/lib/types'
-import { inr } from '@/lib/utils'
+import { priceLabel } from '@/lib/defaults'
 import { Select } from '@/components/ui/input'
 import { buttonVariants } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -62,9 +62,9 @@ export function PlanFinder({ plans }: { plans: Plan[] }) {
       </CardContent></Card>
 
       <Card className="border-primary lg:col-span-2" aria-live="polite"><CardContent className="space-y-3 pt-5">
-        <div className="text-xs font-semibold uppercase tracking-wide text-primary">Your best fit</div>
-        <div className="text-2xl font-bold">{rec.name}</div>
-        <div className="text-3xl font-bold">{inr(rec.price_inr)}<span className="text-sm font-normal text-muted-foreground"> {rec.price_inr === 0 ? 'free forever' : `per ${rec.period}`}</span></div>
+        <div className="eyebrow">Your best fit</div>
+        <div className="font-display text-3xl">{rec.name}</div>
+        <div className="font-display text-4xl">{priceLabel(rec).amount}<span className="font-sans text-sm text-muted-foreground"> {priceLabel(rec).per}</span></div>
         <ul className="space-y-1 text-sm">
           {picked.map(n => <li key={n.id} className="flex gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />{n.label}</li>)}
           {!picked.length && <li className="text-muted-foreground">Tick what you need on the left.</li>}
@@ -74,8 +74,8 @@ export function PlanFinder({ plans }: { plans: Plan[] }) {
             {skipped.slice(-1).map(s => <div key={s.plan.key}><b>{s.plan.name}</b> wouldn’t cover:
               <ul className="mt-1 space-y-0.5">{s.why.slice(0, 3).map(w => <li key={w} className="flex gap-1"><X className="mt-0.5 h-3 w-3 shrink-0 text-destructive" />{w}</li>)}</ul></div>)}
           </div>)}
-        <Link to="/signup" className={buttonVariants({ size: 'lg' }) + ' w-full'}>Create my workspace <ArrowRight className="h-4 w-4" /></Link>
-        <p className="text-center text-xs text-muted-foreground">Everyone starts free. You only pay when you switch plans.</p>
+        <Link to="/signup" className={buttonVariants({ size: 'lg' }) + ' w-full'}>Organise an event <ArrowRight className="h-4 w-4" /></Link>
+
       </CardContent></Card>
     </div>)
 }

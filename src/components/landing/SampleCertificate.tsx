@@ -1,17 +1,21 @@
 import { CertPreview } from '@/components/CertPreview'
 import { sampleInput } from '@/lib/cert/render'
 
-const input = sampleInput(
-  { orientation: 'landscape', template: 'classic', bg_url: '', accent: '#1e3a8a', cert_title: 'Certificate of Participation',
-    cert_body: 'for actively participating in {event} held on {date}.', signatory: 'Dr. A. Sharma', signatory_role: 'Principal', layout: {},
-    cohosts: [], sponsors: [], sponsor_label: 'Supported By', starts_at: '2026-10-14T10:00:00Z', title: 'Annual Language Day 2026' },
-  { name: 'Greenfield Public School', logo_url: '' }, null, false)
+/** Rendered by the same engine organisers use. All personal details are placeholders on purpose. */
+const input = {
+  ...sampleInput(
+    { orientation: 'landscape', template: 'classic', bg_url: '', accent: '#0b3d38', cert_title: 'Certificate of Participation',
+      cert_body: 'for participating in XXXX XXXX held on XX XXXX XXXX.', signatory: 'XXXX XXXX', signatory_role: 'XXXX', layout: {},
+      cohosts: [], sponsors: [], sponsor_label: 'Supported By', starts_at: null, title: 'XXXX XXXX' },
+    { name: 'XXXX XXXX', logo_url: '' }, null, false),
+  person: { name_en: 'XXXX XXXX', name_hi: '', grade: 'XX', institution: 'XXXX XXXX' },
+  cert_id: 'CGM-XXXXXXXXXX', dateText: 'XX XXXX XXXX', verify_url: 'https://example.com/verify/CGM-XXXXXXXXXX',
+}
 
-/** A real certificate rendered by the same engine organisers use, so visitors see exactly what they will hand out. */
 export function SampleCertificate() {
   return (
     <figure className="mx-auto w-full max-w-xl">
-      <CertPreview input={{ ...input, person: { name_en: 'Aarav Sharma', name_hi: 'आरव शर्मा', grade: '8', institution: 'Greenfield Public School' } }} dpi={72} className="drop-shadow-xl" />
-      <figcaption className="mt-2 text-center text-xs text-muted-foreground">A real certificate made with CerGeMA: English + Devanagari names, signature, and a QR code that proves it is genuine.</figcaption>
+      <CertPreview input={input} dpi={72} className="rounded-xl bg-card p-2 shadow-xl ring-1 ring-border" />
+      <figcaption className="mt-3 text-center text-xs text-muted-foreground">Sample layout. Names, institution and signatory are placeholders.</figcaption>
     </figure>)
 }

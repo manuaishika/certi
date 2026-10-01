@@ -5,7 +5,7 @@ export default {
   theme: {
     container: { center: true, padding: '1rem', screens: { '2xl': '1280px' } },
     extend: {
-      fontFamily: { sans: ['Inter', 'Noto Serif Devanagari', 'system-ui', 'sans-serif'] },
+      fontFamily: { sans: ['Hanken Grotesk', 'Noto Sans Devanagari', 'system-ui', 'sans-serif'], display: ['Instrument Serif', 'Noto Serif Devanagari', 'Georgia', 'serif'], mono: ['IBM Plex Mono', 'ui-monospace', 'monospace'] },
       colors: {
         border: 'hsl(var(--border))', input: 'hsl(var(--input))', ring: 'hsl(var(--ring))',
         background: 'hsl(var(--background))', foreground: 'hsl(var(--foreground))',

@@ -20,7 +20,7 @@ export function LanguageSwitch() {
   const { i18n } = useTranslation()
   const cur = i18n.resolvedLanguage ?? 'en'
   return (
-    <button className="flex items-center gap-1 rounded border border-white/40 px-2 py-0.5 text-xs" aria-label="Change language"
+    <button className="flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs text-muted-foreground hover:text-foreground" aria-label="Change language"
       onClick={() => { const i = LANGUAGES.findIndex(l => l.code === cur); i18n.changeLanguage(LANGUAGES[(i + 1) % LANGUAGES.length].code) }}>
       <Languages className="h-3 w-3" /> {LANGUAGES.find(l => l.code !== cur)?.label}
     </button>)
@@ -32,22 +32,28 @@ export function Header({ admin }: { admin?: boolean }) {
   const b = useBranding()
   const home = me ? (me.profile.role === 'volunteer' ? '/admin/scan' : me.profile.role === 'affiliate' ? '/admin/partner' : '/admin') : '/signup'
   const anchors = !admin && !b.tenantName
+  const link = 'text-sm text-muted-foreground transition hover:text-foreground'
   return (
-    <header className="sticky top-0 z-40 bg-primary text-primary-foreground">
+    <header className="sticky top-0 z-40 border-b bg-background/90 backdrop-blur">
       <div className="container flex items-center gap-4 py-3">
-        <Link to="/" className="flex items-center gap-2 text-lg font-bold"><img src={b.logo} alt="" className="h-8 w-8 rounded bg-white/10 object-contain" />{b.appName}</Link>
-        {anchors && <nav className="ml-6 hidden items-center gap-5 text-sm md:flex" aria-label="Sections">
-          <Link className="hover:text-accent" to={{ pathname: '/', hash: '#how' }}>{t('nav.how')}</Link>
-          <Link className="hover:text-accent" to={{ pathname: '/', hash: '#plans' }}>{t('nav.plans')}</Link>
-          <Link className="hover:text-accent" to={{ pathname: '/', hash: '#faq' }}>{t('nav.faq')}</Link></nav>}
-        <nav className="ml-auto flex items-center gap-3 text-sm sm:gap-4">
-          <Link className="hidden hover:text-accent sm:inline" to="/claim">{t('nav.claim')}</Link>
+        <Link to="/" className="flex items-center gap-2.5">
+          {b.tenantName ? <img src={b.logo} alt="" className="h-8 w-8 rounded object-contain" />
+            : <span className="grid h-8 w-8 place-items-center rounded-md bg-primary font-display text-xl leading-none text-primary-foreground">C</span>}
+          <span className="font-display text-2xl leading-none">{b.appName}</span>
+        </Link>
+        {anchors && <nav className="mx-auto hidden items-center gap-10 md:flex" aria-label="Sections">
+          <Link className={link} to={{ pathname: '/', hash: '#organise' }}>{t('nav.organise')}</Link>
+          <Link className={link} to={{ pathname: '/', hash: '#attend' }}>{t('nav.attend')}</Link>
+          <Link className={link} to={{ pathname: '/', hash: '#verify' }}>{t('nav.verify')}</Link></nav>}
+        <nav className="ml-auto flex items-center gap-3 sm:gap-5">
+          {anchors && <Link className={link + ' hidden lg:inline'} to={{ pathname: '/', hash: '#verify' }}>{t('nav.verify_cert')}</Link>}
+          {admin && <Link className={link} to="/claim">{t('nav.claim')}</Link>}
           {me ? <>
-            {!admin && <Link className="hover:text-accent" to={home}>{t('nav.console')}</Link>}
-            <button className="hover:text-accent" onClick={() => signOut()}>{t('nav.logout')}</button>
+            {!admin && <Link className={link} to={home}>{t('nav.console')}</Link>}
+            <button className={link} onClick={() => signOut()}>{t('nav.logout')}</button>
           </> : <>
-            <Link className="hover:text-accent" to="/login">{t('nav.login')}</Link>
-            {!b.tenantName && <Link className="rounded-md bg-accent px-3 py-1.5 font-semibold text-accent-foreground hover:bg-accent/90" to="/signup">{t('nav.start')}</Link>}
+            <Link className={link} to="/login">{t('nav.login')}</Link>
+            {!b.tenantName && <Link className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90" to="/signup">{t('nav.organise_cta')}</Link>}
           </>}
           <LanguageSwitch />
         </nav>
@@ -60,7 +66,7 @@ export function PublicLayout() {
   const { hash, pathname } = useLocation()
   useEffect(() => { if (hash) setTimeout(() => document.getElementById(hash.slice(1))?.scrollIntoView({ behavior: 'smooth' }), 50); else window.scrollTo(0, 0) }, [hash, pathname])
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col overflow-x-clip">
       <DemoBanner />
       <Header />
       <main className="container flex-1 py-6"><Outlet /></main>
