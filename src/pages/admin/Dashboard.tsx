@@ -46,14 +46,14 @@ export default function Dashboard() {
         <Link to="/admin/scan" className={buttonVariants({ variant: 'outline' })}>Open scanner</Link>
       </PageHeader>
       {t && data?.scope === 'tenant' && <GettingStarted t={t} d={data} />}
-      {data && <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-4">
+      {data && <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-4 [&>:last-child:nth-child(odd)]:col-span-2 md:[&>:last-child:nth-child(odd)]:col-span-1">
         {data.scope === 'platform' && <Stat label="Tenants" value={data.tenants} />}
         <Stat label="Events" value={data.events} /><Stat label="Registrations" value={data.registrations} /><Stat label="Certificates" value={data.certificates} />
         {data.scope === 'platform' && <Stat label="Revenue (INR, paid)" value={inr(data.revenue_inr)} />}
       </div>}
       {t && <div className="mt-6 grid gap-4 md:grid-cols-2">
         <Card><CardContent className="pt-5">
-          <div className="flex justify-between text-sm"><span className="font-semibold">Certificate usage</span><Link className="text-primary underline" to="/admin/billing">Upgrade</Link></div>
+          <div className="flex justify-between text-sm"><span className="font-semibold">Certificate usage</span><Link className="text-primary underline max-md:inline-flex max-md:min-h-11 max-md:items-center" to="/admin/billing">Upgrade</Link></div>
           {t.quota ? <><div className="mt-2 text-xs text-muted-foreground">{t.used.toLocaleString('en-IN')} / {t.quota.toLocaleString('en-IN')}</div>
             <div className="mt-1 h-2 rounded bg-secondary"><div className={`h-2 rounded ${pct >= 90 ? 'bg-red-500' : 'bg-primary'}`} style={{ width: `${pct}%` }} /></div></>
             : <div className="mt-2 text-xs text-muted-foreground">Unlimited ({t.used} issued)</div>}

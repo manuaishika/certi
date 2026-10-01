@@ -58,7 +58,7 @@ export default function EventPage() {
           <p className="whitespace-pre-line text-sm">{ev.description}</p>
           {ev.mode !== 'online' && ev.venue && (
             <div className="space-y-1 text-sm"><div className="flex items-start gap-1"><MapPin className="mt-0.5 h-4 w-4" /><span><b>{t('reg.venue')}:</b> {ev.venue}</span></div>
-              {ev.lat != null && ev.lng != null && <a className="text-primary underline" target="_blank" rel="noopener noreferrer" href={`https://www.google.com/maps?q=${ev.lat},${ev.lng}`}>{t('reg.open_maps')}</a>}
+              {ev.lat != null && ev.lng != null && <a className="text-primary underline max-md:inline-flex max-md:min-h-11 max-md:items-center" target="_blank" rel="noopener noreferrer" href={`https://www.google.com/maps?q=${ev.lat},${ev.lng}`}>{t('reg.open_maps')}</a>}
               {ev.arrival_info && <p className="text-muted-foreground">{ev.arrival_info}</p>}</div>)}
           {ev.mode !== 'offline' && <p className="text-xs text-muted-foreground">{t('reg.join_note')}</p>}
         </CardContent></Card>
@@ -78,7 +78,7 @@ export default function EventPage() {
               <div className="space-y-1 sm:col-span-2"><Label htmlFor="parent">{t('reg.parent')}</Label><Input id="parent" value={form.parent_name} onChange={set('parent_name')} /></div>
               {ev.mode === 'hybrid' && lifecycle && (
                 <fieldset className="text-sm sm:col-span-2"><legend className="mb-1 font-medium">{t('reg.mode')}</legend>
-                  {(['offline', 'online'] as const).map(m => <label key={m} className="mr-5"><input type="radio" className="mr-1" name="mode" checked={form.attend_mode === m} onChange={() => setForm(f => ({ ...f, attend_mode: m }))} />{m === 'offline' ? t('reg.in_person') : t('reg.online')}</label>)}</fieldset>)}
+                  {(['offline', 'online'] as const).map(m => <label key={m} className="mr-5 max-md:inline-flex max-md:min-h-11 max-md:items-center max-md:gap-2"><input type="radio" className="mr-1 max-md:mr-0 max-md:h-5 max-md:w-5" name="mode" checked={form.attend_mode === m} onChange={() => setForm(f => ({ ...f, attend_mode: m }))} />{m === 'offline' ? t('reg.in_person') : t('reg.online')}</label>)}</fieldset>)}
               <Button className="sm:col-span-2" size="lg" disabled={busy}>{t('reg.register')}</Button>
             </form>
           </CardContent></Card>)}

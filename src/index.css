@@ -34,5 +34,10 @@
   body { @apply bg-background text-foreground font-sans antialiased; }
   .font-display { font-family: 'Instrument Serif', 'Noto Serif Devanagari', Georgia, serif; font-weight: 400; letter-spacing: -0.015em; }
   .eyebrow { @apply font-sans text-[11px] font-semibold uppercase tracking-[0.2em] text-accent; }
-  html { scroll-behavior: smooth; }
+  html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+  /* phones: no 300 ms tap delay, no grey tap flash, respect the notch / home indicator */
+  button, a, summary, label, select, input { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+  body { padding-bottom: env(safe-area-inset-bottom); }
+  .no-scrollbar { scrollbar-width: none; }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
 }

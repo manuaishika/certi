@@ -63,7 +63,7 @@ test('designer: drag a field, AI background, plan gating', async ({ page }) => {
 test('enterprise: attendance scanner, white-label branding, billing with mock payment', async ({ page }) => {
   await login(page, 'Enterprise')
   await page.goto('/admin/scan'); await expect(page.getByText('Gate check-in')).toBeVisible()
-  await page.getByPlaceholder(/Or type pass code/).fill('PNOPE'); await page.getByRole('button', { name: 'Check in' }).click(); await expect(page.getByText('Unknown pass')).toBeVisible()
+  await page.getByPlaceholder(/Or type the pass code/).fill('PNOPE'); await page.getByRole('button', { name: 'Check in' }).click(); await expect(page.getByText('Unknown pass')).toBeVisible()
   await page.goto('/admin/orgs'); await expect(page.getByText('White-label & custom domain')).toBeVisible()
   await page.goto('/admin/billing'); await page.getByRole('button', { name: /^Pay with/ }).click()
   await page.getByRole('button', { name: 'Simulate successful payment' }).click(); await expect(page.getByText('₹1,000')).toBeVisible()

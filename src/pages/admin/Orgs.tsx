@@ -50,7 +50,7 @@ function Tenant({ d, isSuper, reload }: { d: any; isSuper: boolean; reload: () =
 
         <section><h3 className="text-sm font-semibold">Team</h3>
           <ul className="mt-1 text-sm">{d.users.map((u: any) => <li key={u.id}>{u.email} <span className="text-xs text-muted-foreground">({u.role})</span></li>)}</ul>
-          <form className="mt-2 grid grid-cols-4 gap-2" onSubmit={e => { e.preventDefault(); run(async () => { await api.invoke('invite-user', { ...user, org_id: r.id }); setUser({ email: '', password: '', role: 'volunteer' }); reload() }, 'User added.') }}>
+          <form className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-4" onSubmit={e => { e.preventDefault(); run(async () => { await api.invoke('invite-user', { ...user, org_id: r.id }); setUser({ email: '', password: '', role: 'volunteer' }); reload() }, 'User added.') }}>
             <Input type="email" placeholder="email" required value={user.email} onChange={e => setUser({ ...user, email: e.target.value })} />
             <Input placeholder="password (8+)" minLength={8} required value={user.password} onChange={e => setUser({ ...user, password: e.target.value })} />
             <Select value={user.role} onChange={e => setUser({ ...user, role: e.target.value })}><option value="volunteer">Volunteer (scanner)</option><option value="org_admin">Admin</option></Select>

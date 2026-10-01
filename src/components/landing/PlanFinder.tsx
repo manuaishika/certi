@@ -48,8 +48,8 @@ export function PlanFinder({ plans }: { plans: Plan[] }) {
         <fieldset><legend className="mb-2 font-semibold">What do you need? <span className="font-normal text-muted-foreground">(tick all that apply)</span></legend>
           <div className="space-y-2">
             {NEEDS.map(n => (
-              <label key={n.id} className="flex cursor-pointer items-start gap-3 rounded-lg border p-3 text-sm hover:bg-secondary/50 has-[:checked]:border-primary has-[:checked]:bg-primary/5">
-                <input type="checkbox" className="mt-1" checked={!!on[n.id]} onChange={e => setOn({ ...on, [n.id]: e.target.checked })} />
+              <label key={n.id} className="flex min-h-14 md:min-h-0 cursor-pointer items-start gap-3 rounded-lg border p-3 text-sm hover:bg-secondary/50 has-[:checked]:border-primary has-[:checked]:bg-primary/5">
+                <input type="checkbox" className="mt-1 shrink-0 max-md:mt-0.5 max-md:h-5 max-md:w-5 max-md:accent-[hsl(var(--primary))]" checked={!!on[n.id]} onChange={e => setOn({ ...on, [n.id]: e.target.checked })} />
                 <span><span className="font-medium">{n.label}</span><span className="block text-xs text-muted-foreground">{n.hint}</span></span>
               </label>))}
           </div></fieldset>

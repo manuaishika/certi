@@ -38,3 +38,16 @@ export function useDebounced<T>(value: T, ms = 300) {
   useEffect(() => { const t = setTimeout(() => setV(value), ms); return () => clearTimeout(t) }, [value, ms])
   return v
 }
+
+/** Reactive CSS media query. Used to render ONE layout (cards on phones, tables on desktop) instead of hiding a duplicate. */
+export function useMedia(query: string) {
+  const get = () => typeof window !== 'undefined' && window.matchMedia(query).matches
+  const [m, setM] = useState(get)
+  useEffect(() => {
+    const mq = window.matchMedia(query); const f = () => setM(mq.matches)
+    mq.addEventListener('change', f); f()
+    return () => mq.removeEventListener('change', f)
+  }, [query])
+  return m
+}
+export const useIsDesktop = () => useMedia('(min-width: 768px)')

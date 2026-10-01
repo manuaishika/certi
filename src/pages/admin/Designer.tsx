@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
-import { Sparkles } from 'lucide-react'
+import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Sparkles } from 'lucide-react'
 import { api } from '@/lib/backend'
-import { useAction, useRpc } from '@/lib/hooks'
+import { useAction, useIsDesktop, useRpc } from '@/lib/hooks'
 import type { EventRow, FieldPos } from '@/lib/types'
 import { FIELDS, FIELD_LABELS, mergedLayout, type FieldKey } from '@/lib/cert/layout'
 import { TEMPLATE_LABELS, proceduralBlob } from '@/lib/cert/backgrounds'
@@ -21,6 +21,7 @@ export default function Designer() {
   const info = useRpc<any>('get_event_admin', { p_event: id }, [id])
   const policy = useRpc<{ state: string; detail: string; cost: number }>('ai_policy', { p_event: id }, [id])
   const { busy, run } = useAction()
+  const desktop = useIsDesktop()
   const [layout, setLayout] = useState<Record<FieldKey, FieldPos> | null>(null)
   const [sel, setSel] = useState<FieldKey | null>(null)
   const [handles, setHandles] = useState(true)
@@ -53,6 +54,8 @@ export default function Designer() {
     el.addEventListener('pointermove', move); el.addEventListener('pointerup', up)
   }
 
+  const nudge = (dx: number, dy: number) => { if (!sel) return; const c = (v: number) => Math.min(1, Math.max(0, v)); update(sel, { x: c(layout[sel].x + dx), y: c(layout[sel].y + dy) }) }
+
   const uploadBg = (f: File) => run(async () => {
     const url = await api.upload(await prepareImage(f, 3508, false), 'backgrounds')
     await api.rpc('set_event_background', { p_event: id, p_url: url }); await info.reload()
@@ -79,7 +82,7 @@ export default function Designer() {
 
   return (
     <div>
-      <div className="mb-4 flex items-center gap-3"><Link to={`/admin/events/${id}`} className="text-sm underline">← {ev.title}</Link><h1 className="text-xl font-bold">Certificate designer</h1></div>
+      <div className="mb-4 flex flex-col items-start gap-1 sm:flex-row sm:items-center sm:gap-3"><Link to={`/admin/events/${id}`} className="text-sm underline">← {ev.title}</Link><h1 className="text-xl font-bold">Certificate designer</h1></div>
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <p className="mb-1 text-xs text-muted-foreground">Drag the blue handles to position fields. Sample data shown; real names render at 300 DPI.</p>
@@ -87,9 +90,23 @@ export default function Designer() {
             <CertPreview input={input} dpi={80} />
             {handles && FIELDS.map(k => (
               <div key={k} onPointerDown={startDrag(k)} data-field={k}
-                className={cn('absolute -translate-x-1/2 -translate-y-1/2 cursor-move touch-none whitespace-nowrap rounded bg-blue-600/45 px-1.5 py-1 text-[10px] leading-none text-white hover:bg-blue-600', sel === k && 'outline outline-2 outline-yellow-400')}
+                className={cn('absolute -translate-x-1/2 -translate-y-1/2 cursor-move touch-none whitespace-nowrap rounded bg-blue-600/45 px-1.5 py-1 text-[10px] leading-none text-white hover:bg-blue-600 before:absolute before:-inset-3 before:content-[""]',
+                'max-sm:h-5 max-sm:w-5 max-sm:overflow-hidden max-sm:rounded-full max-sm:p-0 max-sm:text-[0px] max-sm:bg-blue-600/70',
+                sel === k && 'outline outline-2 outline-yellow-400 max-sm:h-auto max-sm:w-auto max-sm:overflow-visible max-sm:rounded max-sm:px-2 max-sm:py-1.5 max-sm:text-[10px]')}
                 style={{ left: `${layout[k].x * 100}%`, top: `${layout[k].y * 100}%` }}>{FIELD_LABELS[k]}</div>))}
           </div>
+          {!desktop && (
+            <div className="mt-3 rounded-xl border bg-card p-3">
+              <p className="mb-2 text-xs text-muted-foreground">Tap a dot on the certificate or pick a field, then drag it or use the arrows for fine moves.</p>
+              <Select aria-label="Field to move" value={sel ?? ''} onChange={e => setSel((e.target.value || null) as FieldKey | null)}>
+                <option value="">Choose a field…</option>{FIELDS.map(k => <option key={k} value={k}>{FIELD_LABELS[k]}</option>)}</Select>
+              <div className="mx-auto mt-3 grid w-fit grid-cols-3 gap-2">
+                <span /><Button type="button" variant="outline" size="icon" aria-label="Move up" disabled={!sel} onClick={() => nudge(0, -0.01)}><ArrowUp className="h-5 w-5" /></Button><span />
+                <Button type="button" variant="outline" size="icon" aria-label="Move left" disabled={!sel} onClick={() => nudge(-0.01, 0)}><ArrowLeft className="h-5 w-5" /></Button>
+                <Button type="button" variant="outline" size="icon" aria-label="Move down" disabled={!sel} onClick={() => nudge(0, 0.01)}><ArrowDown className="h-5 w-5" /></Button>
+                <Button type="button" variant="outline" size="icon" aria-label="Move right" disabled={!sel} onClick={() => nudge(0.01, 0)}><ArrowRight className="h-5 w-5" /></Button>
+              </div>
+            </div>)}
           <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
             <span className="text-muted-foreground">{sel ? `Selected: ${FIELD_LABELS[sel]}` : 'Select a field, then:'}</span>
             <Button size="sm" variant="outline" disabled={!sel} onClick={() => sel && update(sel, { size: layout[sel].size / 1.08 })}>A−</Button>
@@ -103,7 +120,7 @@ export default function Designer() {
           <Card><CardHeader><CardTitle>Template &amp; colour</CardTitle></CardHeader><CardContent className="space-y-3">
             <Select value={ev.template} onChange={e => run(async () => { await api.rpc('set_event_style', { p_event: id, p_template: e.target.value, p_accent: accent, p_orientation: ev.orientation }); await info.reload() })}>
               {Object.entries(TEMPLATE_LABELS).map(([k, l]) => <option key={k} value={k}>{l}</option>)}{ev.template === 'custom' && <option value="custom" disabled>Custom background (active)</option>}</Select>
-            <div className="flex items-center gap-2"><Label>Accent</Label><input type="color" value={accent} onChange={e => setAccent(e.target.value)}
+            <div className="flex items-center gap-2"><Label>Accent</Label><input type="color" className="max-md:h-10 max-md:w-14 max-md:rounded max-md:border max-md:border-input max-md:bg-card max-md:p-1" value={accent} onChange={e => setAccent(e.target.value)}
               onBlur={() => run(async () => { await api.rpc('set_event_style', { p_event: id, p_template: ev.template, p_accent: accent, p_orientation: ev.orientation }); await info.reload() })} /></div>
             <Select value={ev.orientation} onChange={e => run(async () => { await api.rpc('set_event_style', { p_event: id, p_template: ev.template, p_accent: accent, p_orientation: e.target.value }); await info.reload() })}>
               <option value="landscape">Landscape (297×210 mm)</option><option value="portrait">Portrait (210×297 mm)</option></Select>

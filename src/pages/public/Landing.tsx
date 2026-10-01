@@ -2,7 +2,7 @@ import { FormEvent, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ArrowRight, ChevronDown } from 'lucide-react'
-import { useRpc } from '@/lib/hooks'
+import { useIsDesktop, useRpc } from '@/lib/hooks'
 import { useAuth } from '@/lib/auth'
 import { useBranding } from '@/lib/branding'
 import type { Plan } from '@/lib/types'
@@ -76,7 +76,7 @@ const FAQ: [string, string][] = [
   ['Is my organisation’s data kept separate?', 'Yes. The platform is multi-tenant with data isolation and role-based access.'],
 ]
 
-const cell = 'border-border p-7'
+const cell = 'border-border p-6 md:p-7'
 
 /** On a tenant's own domain the page is about *their* events, not about CerGeMA. */
 function TenantHome({ name }: { name: string }) {
@@ -98,24 +98,25 @@ export default function Landing() {
   const [mobile, setMobile] = useState(''); const [certId, setCertId] = useState('')
   const events = useRpc<{ slug: string; title: string; title_hi: string; mode: string; starts_at: string | null }[]>('list_open_events')
   const livePlans = useRpc<Plan[]>('list_plans')
+  const desktop = useIsDesktop()
   const plans = livePlans.data ?? DEFAULT_PLANS              // render at once; live values replace these when ready
   if (b.tenantName) return <TenantHome name={b.tenantName} />
   const start = me ? (me.profile.role === 'volunteer' ? '/admin/scan' : me.profile.role === 'affiliate' ? '/admin/partner' : '/admin') : '/signup'
-  const primary = 'inline-flex h-11 items-center justify-center gap-2 rounded-md bg-primary px-6 text-sm font-semibold text-primary-foreground hover:bg-primary/90'
-  const outline = 'inline-flex h-11 items-center justify-center rounded-md border border-input bg-card px-6 text-sm font-medium hover:bg-secondary'
+  const primary = 'inline-flex h-12 md:h-11 items-center justify-center gap-2 rounded-md bg-primary px-6 text-sm font-semibold text-primary-foreground hover:bg-primary/90'
+  const outline = 'inline-flex h-12 md:h-11 items-center justify-center rounded-md border border-input bg-card px-6 text-sm font-medium hover:bg-secondary'
 
   return (
-    <div className="space-y-28 pb-10">
+    <div className="space-y-16 pb-10 md:space-y-28">
       <Seo title="CerGeMA | Smart Events, Instant Certificates" description={t('landing.sub')} />
 
       {/* ---------------- hero ---------------- */}
-      <section className="grid items-center gap-12 pt-8 lg:grid-cols-2">
+      <section className="grid items-center gap-8 pt-2 md:gap-12 md:pt-8 lg:grid-cols-2">
         <div>
           <div className="eyebrow">{t('landing.eyebrow')}</div>
-          <h1 className="font-display mt-6 text-6xl leading-[0.95] md:text-7xl">{t('landing.t_pre')}<em className="text-accent">{t('landing.t_em')}</em>{' '}<br />{t('landing.t_post')}</h1>
-          <p className="mt-7 max-w-md text-lg text-muted-foreground">{t('landing.sub')}</p>
+          <h1 className="font-display mt-5 text-[2.75rem] leading-[0.98] sm:text-6xl md:mt-6 md:text-7xl">{t('landing.t_pre')}<em className="text-accent">{t('landing.t_em')}</em>{' '}<br />{t('landing.t_post')}</h1>
+          <p className="mt-5 max-w-md text-base text-muted-foreground md:mt-7 md:text-lg">{t('landing.sub')}</p>
           <p className="mt-2 font-display text-2xl italic text-muted-foreground" lang="hi">{t('landing.tagline_hi')}</p>
-          <div className="mt-8 flex flex-wrap gap-3">
+          <div className="mt-7 grid gap-3 sm:flex sm:flex-wrap md:mt-8">
             <Link to={start} className={primary}>{me ? t('landing.cta_console') : t('landing.cta_org')}</Link>
             <Link to={{ pathname: '/', hash: '#verify' }} className={outline}>{t('landing.cta_lookup')}</Link>
           </div>
@@ -126,11 +127,11 @@ export default function Landing() {
       {/* ---------------- who ---------------- */}
       <section aria-labelledby="who">
         <h2 id="who" className="font-display text-4xl md:text-5xl">{t('landing.who_title')}</h2>
-        <div className="mt-8 grid overflow-hidden rounded-xl border bg-card md:grid-cols-3 md:divide-x">
+        <div className="mt-6 grid overflow-hidden rounded-xl border bg-card md:mt-8 md:grid-cols-3 md:divide-x">
           <div id="organise" className={cell + ' scroll-mt-24'}>
             <div className="eyebrow">{t('landing.o_kicker')}</div><h3 className="font-display mt-6 text-3xl">{t('landing.o_t')}</h3>
             <p className="mt-3 text-muted-foreground">{t('landing.o_d')}</p>
-            <Link to={start} className="mt-6 inline-flex items-center gap-1 text-sm font-semibold hover:text-accent">{t('landing.o_cta')} <ArrowRight className="h-4 w-4" /></Link>
+            <Link to={start} className="mt-4 inline-flex min-h-11 items-center gap-1 text-sm font-semibold hover:text-accent md:mt-6 md:min-h-0">{t('landing.o_cta')} <ArrowRight className="h-4 w-4" /></Link>
           </div>
           <div id="attend" className={cell + ' scroll-mt-24 border-t md:border-t-0'}>
             <div className="eyebrow">{t('landing.r_kicker')}</div><h3 className="font-display mt-6 text-3xl">{t('landing.r_t')}</h3>
@@ -151,18 +152,28 @@ export default function Landing() {
 
       {/* ---------------- why it matters ---------------- */}
       <section>
-        <div className="grid gap-10 lg:grid-cols-[1fr_1.2fr_1.2fr]">
-          <div><div className="eyebrow">Why it matters</div><h2 className="font-display mt-5 text-5xl leading-none">Paper certificates vanish. Trust shouldn’t.</h2></div>
-          <div className="border-l-2 border-border pl-6"><div className="eyebrow !text-muted-foreground">The old way</div><p className="mt-4 text-lg leading-relaxed text-muted-foreground">{OLD_WAY}</p></div>
-          <div className="border-l-2 border-accent pl-6"><div className="eyebrow">The CerGeMA way</div><p className="mt-4 text-lg leading-relaxed text-muted-foreground">{NEW_WAY}</p></div>
+        <div className="grid gap-8 lg:grid-cols-[1fr_1.2fr_1.2fr] lg:gap-10">
+          <div><div className="eyebrow">Why it matters</div><h2 className="font-display mt-5 text-4xl leading-none sm:text-5xl">Paper certificates vanish. Trust shouldn’t.</h2></div>
+          <div className="border-l-2 border-border pl-6"><div className="eyebrow !text-muted-foreground">The old way</div><p className="mt-4 text-base leading-relaxed text-muted-foreground md:text-lg md:leading-relaxed">{OLD_WAY}</p></div>
+          <div className="border-l-2 border-accent pl-6"><div className="eyebrow">The CerGeMA way</div><p className="mt-4 text-base leading-relaxed text-muted-foreground md:text-lg md:leading-relaxed">{NEW_WAY}</p></div>
         </div>
+        {!desktop ? (
+          <div className="mt-8 space-y-3" role="list" aria-label="Traditional methods compared with CerGeMA">
+            {COMPARE.map(([k, a, c]) => (
+              <div key={k} role="listitem" className="rounded-xl border bg-card p-5">
+                <h3 className="font-display text-2xl">{k}</h3>
+                <div className="eyebrow mt-3 !text-muted-foreground">Traditional methods</div><p className="mt-1 text-sm text-muted-foreground">{a}</p>
+                <div className="eyebrow mt-3">CerGeMA</div><p className="mt-1 text-sm">{c}</p>
+              </div>))}
+          </div>
+        ) : (
         <div className="mt-10 overflow-x-auto rounded-xl border bg-card">
           <table className="w-full min-w-[640px] text-left text-sm">
             <caption className="sr-only">Traditional methods compared with CerGeMA</caption>
             <thead><tr className="border-b text-xs uppercase tracking-[0.15em] text-muted-foreground"><th className="p-4 font-semibold">&nbsp;</th><th className="p-4 font-semibold">Traditional methods (Canva, slides, print)</th><th className="p-4 font-semibold text-accent">CerGeMA</th></tr></thead>
             <tbody>{COMPARE.map(([k, a, c]) => <tr key={k} className="border-b last:border-0 align-top"><th scope="row" className="p-4 font-display text-xl font-normal">{k}</th><td className="p-4 text-muted-foreground">{a}</td><td className="p-4">{c}</td></tr>)}</tbody>
           </table>
-        </div>
+        </div>)}
       </section>
 
       {/* ---------------- how organisers run it ---------------- */}
@@ -170,15 +181,15 @@ export default function Landing() {
         <div className="flex flex-wrap items-end justify-between gap-3"><h2 className="font-display text-4xl md:text-5xl">How organisers run it</h2><p className="text-sm text-muted-foreground">Four steps, from invite to certificate.</p></div>
         <ol className="mt-8 grid overflow-hidden rounded-xl border bg-card md:grid-cols-2 md:divide-x lg:grid-cols-4">
           {STEPS.map(([title, d], i) => (
-            <li key={title} className="border-b p-7 last:border-b-0 lg:border-b-0"><div className="font-display text-5xl text-accent">{String(i + 1).padStart(2, '0')}</div>
+            <li key={title} className="border-b p-6 last:border-b-0 md:p-7 lg:border-b-0"><div className="font-display text-5xl text-accent">{String(i + 1).padStart(2, '0')}</div>
               <h3 className="font-display mt-6 text-2xl">{title}</h3><p className="mt-2 text-muted-foreground">{d}</p></li>))}
         </ol>
       </section>
 
       {/* ---------------- participants (dark band) ---------------- */}
-      <section id="participants" className="relative left-1/2 w-screen -translate-x-1/2 bg-primary py-20 text-primary-foreground">
+      <section id="participants" className="relative left-1/2 w-screen -translate-x-1/2 bg-primary py-14 text-primary-foreground md:py-20">
         <div className="container grid gap-12 lg:grid-cols-[1fr_2fr]">
-          <div><div className="eyebrow !text-emerald-400">For participants</div><h2 className="font-display mt-5 text-5xl leading-none">No password. Just your certificate.</h2></div>
+          <div><div className="eyebrow !text-emerald-400">For participants</div><h2 className="font-display mt-5 text-4xl leading-none sm:text-5xl">No password. Just your certificate.</h2></div>
           <ol className="grid gap-8 md:grid-cols-3">
             {PARTICIPANT.map(([title, d], i) => <li key={title} className="border-t border-primary-foreground/25 pt-5"><div className="font-display text-4xl text-emerald-400">{i + 1}</div><h3 className="mt-5 font-medium">{title}</h3><p className="mt-1 text-sm text-primary-foreground/70">{d}</p></li>)}
           </ol>
@@ -191,7 +202,7 @@ export default function Landing() {
         <h2 className="font-display mt-4 text-4xl md:text-5xl">Switch on only what you need.</h2>
         <div className="mt-8 grid overflow-hidden rounded-xl border bg-card sm:grid-cols-2 lg:grid-cols-3">
           {MODULES.map(([k, title, d]) => (
-            <div key={k} className="border-b border-r p-7"><div className="eyebrow">Module {k}</div><h3 className="font-display mt-5 text-2xl">{title}</h3><p className="mt-2 text-sm leading-relaxed text-muted-foreground">{d}</p></div>))}
+            <div key={k} className="border-b p-6 sm:border-r md:p-7"><div className="eyebrow">Module {k}</div><h3 className="font-display mt-5 text-2xl">{title}</h3><p className="mt-2 text-sm leading-relaxed text-muted-foreground">{d}</p></div>))}
         </div>
         <p className="mt-3 text-sm text-muted-foreground">Works as a responsive site on desktop and installs as a standalone app on a phone.</p>
       </section>
@@ -200,7 +211,7 @@ export default function Landing() {
       <section>
         <h2 className="font-display text-4xl md:text-5xl">Built for mass-impact initiatives</h2>
         <div className="mt-8 grid overflow-hidden rounded-xl border bg-card sm:grid-cols-2 lg:grid-cols-4 lg:divide-x">
-          {AUDIENCE.map(([title, d]) => <div key={title} className="border-b p-7 lg:border-b-0"><h3 className="font-display text-2xl">{title}</h3><p className="mt-2 text-sm text-muted-foreground">{d}</p></div>)}
+          {AUDIENCE.map(([title, d]) => <div key={title} className="border-b p-6 last:border-b-0 md:p-7 lg:border-b-0"><h3 className="font-display text-2xl">{title}</h3><p className="mt-2 text-sm text-muted-foreground">{d}</p></div>)}
         </div>
       </section>
 
@@ -222,6 +233,18 @@ export default function Landing() {
         <p className="mt-3 max-w-2xl text-muted-foreground">Tick what you need and we will name the lowest plan that includes it, and what the plan below would be missing.</p>
         <div className="mt-8"><PlanFinder plans={plans} /></div>
 
+        {!desktop ? (
+          <div className="mt-10 space-y-3" role="list" aria-label="Plan comparison">
+            {plans.map((p, pi) => { const pl = priceLabel(p); return (
+              <div key={p.key} role="listitem" className={`rounded-xl border bg-card p-5 ${p.key === 'pro' ? 'ring-2 ring-primary' : ''}`}>
+                <div className="eyebrow">{p.name}</div>
+                <div className="font-display mt-1 text-4xl">{pl.amount}</div><div className="text-xs text-muted-foreground">{pl.per}</div>
+                <dl className="mt-4 divide-y text-sm">
+                  {TIERS.map(t_ => <div key={t_.row} className="grid grid-cols-[7.5rem_1fr] gap-3 py-2.5"><dt className="text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground">{t_.row}</dt><dd>{t_.cells[pi]}</dd></div>)}
+                </dl>
+              </div>) })}
+          </div>
+        ) : (
         <div className="mt-12 overflow-x-auto rounded-xl border bg-card">
           <table className="w-full min-w-[820px] text-left text-sm">
             <caption className="sr-only">Plan comparison</caption>
@@ -235,7 +258,7 @@ export default function Landing() {
               <tr key={t_.row} className="border-b last:border-0 align-top"><th scope="row" className="p-4 text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">{t_.row}</th>
                 {t_.cells.map((c, i) => <td key={i} className={`p-4 ${i === 2 ? 'bg-primary/5' : ''}`}>{c}</td>)}</tr>))}</tbody>
           </table>
-        </div>
+        </div>)}
         <p className="mt-3 text-xs text-muted-foreground">1 credit = ₹1. AI backgrounds use 10 to 15 credits per run. Certificates beyond a plan’s limit are billed at ₹0.50 to ₹1.00 per approved certificate.</p>
       </section>
 
@@ -244,17 +267,17 @@ export default function Landing() {
         <h2 className="font-display text-4xl md:text-5xl">Questions</h2>
         <div className="mt-8 divide-y rounded-xl border bg-card">
           {FAQ.map(([q, a]) => (
-            <details key={q} className="group p-5"><summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-medium">{q}<ChevronDown className="h-4 w-4 shrink-0 transition group-open:rotate-180" /></summary>
-              <p className="mt-3 max-w-3xl text-muted-foreground">{a}</p></details>))}
+            <details key={q} className="group"><summary className="flex min-h-14 cursor-pointer list-none md:min-h-0 items-center justify-between gap-4 p-5 font-medium">{q}<ChevronDown className="h-4 w-4 shrink-0 transition group-open:rotate-180" /></summary>
+              <p className="max-w-3xl px-5 pb-5 text-muted-foreground">{a}</p></details>))}
         </div>
       </section>
 
       {/* ---------------- closing ---------------- */}
-      <section className="rounded-2xl bg-primary p-10 text-center text-primary-foreground md:p-16">
-        <h2 className="font-display text-5xl md:text-6xl">Smart Events, <em className="text-emerald-400">Instant</em> Certificates.</h2>
-        <div className="mt-8 flex flex-wrap justify-center gap-3">
-          <Link to={start} className="inline-flex h-11 items-center rounded-md bg-accent px-6 text-sm font-semibold text-accent-foreground hover:bg-accent/90">{me ? t('landing.cta_console') : t('landing.cta_org')}</Link>
-          <Link to="/claim" className="inline-flex h-11 items-center rounded-md border border-primary-foreground/40 px-6 text-sm font-medium hover:bg-primary-foreground/10">{t('landing.cta_lookup')}</Link>
+      <section className="rounded-2xl bg-primary p-8 text-center text-primary-foreground md:p-16">
+        <h2 className="font-display text-4xl sm:text-5xl md:text-6xl">Smart Events, <em className="text-emerald-400">Instant</em> Certificates.</h2>
+        <div className="mt-8 grid gap-3 sm:flex sm:flex-wrap sm:justify-center">
+          <Link to={start} className="inline-flex h-12 justify-center sm:h-11 items-center rounded-md bg-accent px-6 text-sm font-semibold text-accent-foreground hover:bg-accent/90">{me ? t('landing.cta_console') : t('landing.cta_org')}</Link>
+          <Link to="/claim" className="inline-flex h-12 items-center justify-center rounded-md border border-primary-foreground/40 sm:h-11 px-6 text-sm font-medium hover:bg-primary-foreground/10">{t('landing.cta_lookup')}</Link>
         </div>
       </section>
     </div>)

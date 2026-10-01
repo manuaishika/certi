@@ -1,4 +1,5 @@
-import { NavLink, Navigate, Outlet } from 'react-router-dom'
+import { useEffect } from 'react'
+import { NavLink, Navigate, Outlet, useLocation } from 'react-router-dom'
 import { BarChart3, Building2, CalendarDays, CreditCard, Gift, Handshake, Layers, ScanLine, Settings } from 'lucide-react'
 import { useAuth } from '@/lib/auth'
 import { cn } from '@/lib/utils'
@@ -18,6 +19,8 @@ const LINKS = [
 
 export function AdminLayout() {
   const { me, loading, needsOnboarding } = useAuth()
+  const { pathname } = useLocation()
+  useEffect(() => { document.querySelector('[data-admin-tabs] [aria-current=page]')?.scrollIntoView({ inline: 'center', block: 'nearest' }) }, [pathname, me])
   if (loading) return <div className="grid min-h-screen place-items-center text-muted-foreground">Loading…</div>
   if (needsOnboarding) return <Navigate to="/onboarding" replace />
   if (!me) return <Navigate to="/login" replace />
@@ -26,14 +29,15 @@ export function AdminLayout() {
     <div className="flex min-h-screen flex-col">
       <DemoBanner />
       <Header admin />
-      <div className="border-b bg-card">
-        <div className="container flex gap-1 overflow-x-auto text-sm">
+      <div className="relative border-b bg-card">
+        <div data-admin-tabs className="container no-scrollbar flex gap-1 overflow-x-auto text-sm">
           {links.map(l => (
             <NavLink key={l.to} to={l.to} end={l.end}
-              className={({ isActive }) => cn('flex items-center gap-1.5 whitespace-nowrap border-b-2 px-3 py-3', isActive ? 'border-primary font-semibold text-primary' : 'border-transparent text-muted-foreground hover:text-primary')}>
+              className={({ isActive }) => cn('flex min-h-12 items-center gap-1.5 whitespace-nowrap border-b-2 px-3 md:min-h-0 md:py-3', isActive ? 'border-primary font-semibold text-primary' : 'border-transparent text-muted-foreground hover:text-primary')}>
               <l.icon className="h-4 w-4" />{l.label}
             </NavLink>))}
         </div>
+        <div aria-hidden className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-card to-transparent md:hidden" />
       </div>
       <main className="container flex-1 py-6"><Outlet /></main>
     </div>)

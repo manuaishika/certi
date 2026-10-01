@@ -74,7 +74,7 @@ React SPA (src/)  ──rpc()──►  Postgres functions (supabase/migrations)
 | `npm test` | 49 tests. Migrations on real Postgres: tenant isolation, RLS, anon/authenticated/service privileges, issuing gates, quota + overage, billing, recurring commission, AI queue priority and refunds, webhooks/outbox, white-label domains. Plus webhook-signature and notification helpers. |
 | `npm run check:edge` | `deno check` of every Edge Function against the real supabase-js types. |
 | `npm run test:edge` | Payment webhooks (bad signature, replay, under-payment, idempotence), ERP API auth and limits, outbox/webhook signing, cron-secret auth, run under Deno with a faked client. |
-| `npm run test:e2e` | Playwright through the whole product in a real browser (registration → pass → claim → feedback gate → 300 DPI PDF/PNG → verify; designer; AI background; scanner; billing; roles; Hindi; white-label host). |
+| `npm run test:e2e` | Playwright on desktop **and a 390 px phone** (no sideways scroll, 16 px inputs, 44 px tap targets, menu, card layouts, touch designer, scanner), through the whole product in a real browser (registration → pass → claim → feedback gate → 300 DPI PDF/PNG → verify; designer; AI background; scanner; billing; roles; Hindi; white-label host). |
 
 ## What is and isn't verified
 

@@ -53,7 +53,7 @@ export default function SignupPage() {
           <div className="space-y-1"><Label htmlFor="email">Work email</Label><Input id="email" type="email" value={f.email} onChange={set('email')} required autoComplete="email" /></div>
           <div className="space-y-1"><Label htmlFor="password">Password</Label><Input id="password" type="password" value={f.password} onChange={set('password')} required minLength={8} autoComplete="new-password" /><p className="text-xs text-muted-foreground">At least 8 characters.</p></div>
           <Button className="w-full" size="lg" disabled={busy}>Create my workspace</Button>
-          <p className="text-center text-xs text-muted-foreground">Already have one? <Link className="underline" to="/login">Log in</Link></p>
+          <p className="text-center text-xs text-muted-foreground">Already have one? <Link className="underline max-md:inline-flex max-md:min-h-11 max-md:items-center" to="/login">Log in</Link></p>
         </form>
       </CardContent></Card>
     </div>)

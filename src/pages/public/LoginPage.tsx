@@ -35,7 +35,7 @@ export default function LoginPage() {
           <div className="space-y-1"><Label htmlFor="email">Email</Label><Input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} required autoComplete="username" /></div>
           <div className="space-y-1"><Label htmlFor="password">Password</Label><Input id="password" type="password" value={password} onChange={e => setPassword(e.target.value)} required autoComplete="current-password" /></div>
           <Button className="w-full" disabled={busy}>Log in</Button>
-          <p className="text-center text-xs text-muted-foreground">New here? <Link className="underline" to="/signup">Start free</Link></p>
+          <p className="text-center text-xs text-muted-foreground">New here? <Link className="underline max-md:inline-flex max-md:min-h-11 max-md:items-center" to="/signup">Start free</Link></p>
         </form>
         {isDemo && <div className="mt-5 border-t pt-4"><p className="mb-2 text-xs text-muted-foreground">Demo accounts (one click):</p>
           <div className="flex flex-wrap gap-2">{DEMO_USERS.map(([em, pw, label]) => <Button key={em} type="button" variant="outline" size="sm" onClick={e => submit(e as any, em, pw)}>{label}</Button>)}</div></div>}

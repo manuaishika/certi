@@ -30,7 +30,7 @@ export default function Scanner() {
   useEffect(() => {
     if (!enabled) return
     const sc = new Html5Qrcode('reader'); let started = false
-    sc.start({ facingMode: 'environment' }, { fps: 10, qrbox: 240 }, t => checkin(t), () => {})
+    sc.start({ facingMode: 'environment' }, { fps: 10, qrbox: (w, h) => { const s = Math.floor(Math.min(w, h) * 0.72); return { width: s, height: s } }, aspectRatio: 1 }, t => checkin(t), () => {})
       .then(() => { started = true; setCamera('on') }).catch(() => setCamera('off'))
     return () => { if (started) sc.stop().then(() => sc.clear()).catch(() => {}) }
   }, [enabled]) // eslint-disable-line
@@ -40,10 +40,11 @@ export default function Scanner() {
   return (
     <div className="mx-auto max-w-md">
       <h1 className="text-xl font-bold">Gate check-in</h1>
-      <div id="reader" className="mt-3 min-h-[120px] overflow-hidden rounded-xl border bg-black" />
+      <div role="status" aria-live="polite" className={cn('mt-3 min-h-24 rounded-xl p-4 text-center text-xl leading-snug', !result ? 'border border-dashed text-base text-muted-foreground' : !result.ok ? 'bg-red-100' : result.already ? 'bg-amber-100' : 'bg-emerald-100')}>
+        {!result ? 'Point the camera at a pass. The result appears here.' : result.ok ? <><b className="text-2xl">{result.name}</b><br />{result.message}{!result.approved && <><br /><small>⚠ not yet approved</small></>}<br /><small>{result.event} · {result.mode}</small></> : result.message}
+      </div>
+      <div id="reader" className="mx-auto mt-3 aspect-square w-full max-w-[26rem] overflow-hidden rounded-xl border bg-black" />
       {camera === 'off' && <p className="mt-2 text-sm text-amber-700">Camera unavailable: use manual entry below.</p>}
-      {result && <div role="status" className={cn('mt-3 rounded-xl p-4 text-center text-lg', !result.ok ? 'bg-red-100' : result.already ? 'bg-amber-100' : 'bg-emerald-100')}>
-        {result.ok ? <><b>{result.name}</b><br />{result.message}{!result.approved && <><br /><small>⚠ not yet approved</small></>}<br /><small>{result.event} · {result.mode}</small></> : result.message}</div>}
-      <form onSubmit={submit} className="mt-3 flex gap-2"><Input value={manual} onChange={e => setManual(e.target.value)} placeholder="Or type pass code (e.g. PABCD23XYZ)" className="uppercase" /><Button>Check in</Button></form>
+      <form onSubmit={submit} className="mt-3 flex gap-2"><Input value={manual} onChange={e => setManual(e.target.value)} placeholder="Or type the pass code" className="uppercase placeholder:normal-case" autoCapitalize="characters" autoCorrect="off" autoComplete="off" spellCheck={false} aria-label="Pass code" /><Button className="shrink-0">Check in</Button></form>
     </div>)
 }

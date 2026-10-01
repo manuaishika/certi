@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { api } from '@/lib/backend'
 import { useAuth } from '@/lib/auth'
-import { useAction, useRpc } from '@/lib/hooks'
+import { useAction, useIsDesktop, useRpc } from '@/lib/hooks'
 import type { Plan, PublicSettings, Transaction } from '@/lib/types'
 import { fmtDate, inr } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -32,6 +32,7 @@ export default function Billing() {
   const [pending, setPending] = useState<Transaction | null>(null)
   const { busy, run } = useAction()
   const cur = country === 'IN' ? 'INR' : 'USD'
+  const desktop = useIsDesktop()
 
   if (!bill.data) return <p className="text-muted-foreground">{bill.error || 'Loading…'}</p>
   const { org: o, plans, transactions, settings } = bill.data
@@ -85,6 +86,18 @@ export default function Billing() {
       </div>
 
       <h2 className="mb-2 mt-8 font-semibold">Transactions</h2>
+      {!desktop ? (
+        <div className="space-y-3">
+          {transactions.map(x => (
+            <Card key={x.id}><CardContent className="space-y-1 pt-4 text-sm">
+              <div className="flex items-center justify-between gap-2"><span className="font-medium capitalize">{x.kind}{x.plan && ` · ${x.plan}`}</span><Badge variant={x.status === 'paid' ? 'success' : 'warning'}>{x.status}</Badge></div>
+              <div className="flex justify-between text-muted-foreground"><span>{fmtDate(x.created_at, true)}</span><span>{Number(x.amount) ? `${x.amount} ${x.currency}` : `${Number(x.credits) > 0 ? '+' : ''}${Number(x.credits)} credits`}</span></div>
+              <div className="text-xs text-muted-foreground">via {x.provider}{x.note ? ` · ${x.note}` : ''}</div>
+              {x.status === 'created' && <Button size="sm" variant="outline" className="mt-1" onClick={() => startPayment(x)}>Complete payment</Button>}
+            </CardContent></Card>))}
+          {!transactions.length && <p className="text-muted-foreground">No transactions yet.</p>}
+        </div>
+      ) : (
       <Card className="overflow-x-auto"><table className="w-full text-sm">
         <thead className="text-left text-xs text-muted-foreground"><tr>{['When', 'Type', 'Amount', 'Credits', 'Via', 'Status', 'Note'].map(h => <th key={h} className="p-2 font-medium">{h}</th>)}</tr></thead>
         <tbody>{transactions.map(x => (
@@ -93,6 +106,7 @@ export default function Billing() {
             <td><Badge variant={x.status === 'paid' ? 'success' : 'warning'}>{x.status}</Badge>{x.status === 'created' && <button className="ml-2 text-xs underline" onClick={() => startPayment(x)}>pay</button>}</td>
             <td className="text-xs text-muted-foreground">{x.note}</td></tr>))}
           {!transactions.length && <tr><td className="p-4 text-muted-foreground">No transactions yet.</td></tr>}</tbody></table></Card>
+      )}
 
       <Dialog open={!!pending} onOpenChange={v => !v && setPending(null)}>
         <DialogContent>
